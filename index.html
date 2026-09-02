@@ -1052,7 +1052,20 @@
       const resumeHash =
         resume.toString();
 
-      const workerParams = new URLSearchParams(window.location.search);\n      workerParams.set("room", room);\n\n      return (\n        workerUrl +\n        "/?" +\n        workerParams.toString() +
+      const workerParams =
+        new URLSearchParams(
+          window.location.search
+        );
+
+      workerParams.set(
+        "room",
+        room
+      );
+
+      return (
+        workerUrl +
+        "/?" +
+        workerParams.toString() +
         (
           resumeHash
             ? "#" + resumeHash
