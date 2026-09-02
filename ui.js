@@ -1153,8 +1153,83 @@
 
 
 
+
+  /* =====================================================
+     聊天訊息暱稱：取消按鈕框框
+     - 保留點暱稱即可 @ 對方的功能
+     - 只改外觀，不改聊天邏輯
+  ====================================================== */
+  function installNicknamePlainStyle() {
+    if (
+      document.getElementById(
+        "nezhaNicknamePlainStyle"
+      )
+    ) {
+      return;
+    }
+
+    const style =
+      document.createElement(
+        "style"
+      );
+
+    style.id =
+      "nezhaNicknamePlainStyle";
+
+    style.textContent = `
+      .message-head .nickname.nickname-mention-btn,
+      .nickname.nickname-mention-btn {
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        display: inline !important;
+        min-width: 0 !important;
+        width: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+        background-image: none !important;
+        color: inherit !important;
+        border: 0 !important;
+        outline: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+        font: inherit !important;
+        font-weight: 800 !important;
+        line-height: inherit !important;
+        cursor: pointer !important;
+      }
+
+      .message-head .nickname.nickname-mention-btn:hover,
+      .nickname.nickname-mention-btn:hover {
+        background: transparent !important;
+        box-shadow: none !important;
+        filter: none !important;
+        opacity: .82;
+      }
+
+      .message-head .nickname.nickname-mention-btn:focus,
+      .message-head .nickname.nickname-mention-btn:active,
+      .nickname.nickname-mention-btn:focus,
+      .nickname.nickname-mention-btn:active {
+        background: transparent !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        outline: none !important;
+        transform: none !important;
+      }
+    `;
+
+    document.head.appendChild(
+      style
+    );
+  }
+
   function init() {
     ensureThemeStyles();
+    installNicknamePlainStyle();
     installFloatingBallDragFix();
     installAdminToolsScrollFix();
     installThemeButtonObserver();
