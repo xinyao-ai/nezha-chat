@@ -510,3 +510,22 @@ button.active,
     max-width: 38px !important;
   }
 }
+
+
+/* ===== 組隊按鈕加寬 ===== */
+#teamActivityButton {
+  width: 78px !important;
+  min-width: 78px !important;
+  max-width: 78px !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 700px) {
+  #teamActivityButton {
+    width: 72px !important;
+    min-width: 72px !important;
+    max-width: 72px !important;
+  }
+}
