@@ -179,6 +179,33 @@
         background:var(--th-soft) !important;
         border-bottom-color:color-mix(in srgb, var(--th-accent) 60%, #d8d0c5) !important;
       }
+
+      .nezha-category-link,
+      .nezha-category-coming {
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        cursor: pointer !important;
+        font-family: inherit !important;
+        line-height: 1 !important;
+      }
+
+      .nezha-category-link:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.02);
+      }
+
+      .nezha-category-link:active {
+        transform: translateY(0);
+        filter: brightness(.98);
+      }
+
+      .nezha-category-coming {
+        cursor: default !important;
+        opacity: .78;
+      }
+
       body[data-nezha-theme] .nezha-category-item {
         background:linear-gradient(180deg,var(--th-card),var(--th-soft2)) !important;
         color:var(--th-text) !important;
@@ -606,11 +633,65 @@
       strip.className = "nezha-category-strip";
       strip.setAttribute("aria-label", "娛樂分類");
       strip.innerHTML = `
-        <div class="nezha-category-item">⚽ <span>體育</span></div>
-        <div class="nezha-category-item">🎰 <span>老虎機</span></div>
-        <div class="nezha-category-item">🎟️ <span>彩票</span></div>
-        <div class="nezha-category-item">🏎️ <span>跑車</span></div>
+        <button
+          class="nezha-category-item nezha-category-link"
+          type="button"
+          data-url="https://awu7757-sys.github.io/habao-football-ai/"
+          aria-label="開啟體育分析"
+        >
+          ⚽ <span>體育</span>
+        </button>
+
+        <button
+          class="nezha-category-item nezha-category-link"
+          type="button"
+          data-url="https://xinyao-ai.github.io/xinyao-ai/?v=5000"
+          aria-label="開啟老虎機分析"
+        >
+          🎰 <span>老虎機</span>
+        </button>
+
+        <button
+          class="nezha-category-item nezha-category-link"
+          type="button"
+          data-url="https://xinyao-ai.github.io/xinyao-539/"
+          aria-label="開啟彩票分析"
+        >
+          🎟️ <span>彩票</span>
+        </button>
+
+        <button
+          class="nezha-category-item nezha-category-coming"
+          type="button"
+          aria-label="跑車功能尚未設定"
+          title="跑車網址尚未設定"
+        >
+          🏎️ <span>跑車</span>
+        </button>
       `;
+
+      strip
+        .querySelectorAll(".nezha-category-link")
+        .forEach(function(button) {
+          button.addEventListener(
+            "click",
+            function() {
+              const url =
+                String(
+                  button.dataset.url || ""
+                ).trim();
+
+              if (!url) return;
+
+              window.open(
+                url,
+                "_blank",
+                "noopener,noreferrer"
+              );
+            }
+          );
+        });
+
       header.insertAdjacentElement("afterend", strip);
     }
 
