@@ -262,11 +262,20 @@
         border-color:color-mix(in srgb, var(--th-danger) 75%, #333) !important;
       }
 
-      #teamActivityButton.nezha-theme-button {
+      #teamActivityButton.nezha-theme-button,
+      #nezhaAdminThemeButton.nezha-theme-button {
         width:78px !important;
         min-width:78px !important;
         max-width:78px !important;
+        height:40px !important;
+        min-height:40px !important;
+        max-height:40px !important;
+        padding:0 12px !important;
+        display:inline-flex !important;
+        align-items:center !important;
+        justify-content:center !important;
         white-space:nowrap !important;
+        border-radius:10px !important;
       }
 
       .nezha-theme-backdrop {
@@ -371,10 +380,14 @@
         .nezha-theme-backdrop { padding:10px; }
         .nezha-theme-grid { grid-template-columns:1fr; }
         .nezha-theme-choice { min-height:94px !important; }
-        #teamActivityButton.nezha-theme-button {
+        #teamActivityButton.nezha-theme-button,
+        #nezhaAdminThemeButton.nezha-theme-button {
           width:72px !important;
           min-width:72px !important;
           max-width:72px !important;
+          height:38px !important;
+          min-height:38px !important;
+          max-height:38px !important;
         }
       }
     `;
@@ -484,8 +497,7 @@
     document.body.appendChild(backdrop);
   }
 
-  function convertTeamButtonToTheme() {
-    const button = document.getElementById("teamActivityButton");
+  function bindThemeButton(button) {
     if (!button) return;
 
     button.removeAttribute("onclick");
@@ -495,12 +507,76 @@
     button.setAttribute("aria-label", "更換聊天室主題");
 
     if (button.dataset.themeBound === "1") return;
+
     button.dataset.themeBound = "1";
     button.addEventListener("click", event => {
       event.preventDefault();
       event.stopPropagation();
       openThemePanel();
     });
+  }
+
+  function convertTeamButtonToTheme() {
+    const button = document.getElementById("teamActivityButton");
+    if (!button) return;
+
+    bindThemeButton(button);
+  }
+
+  function ensureAdminThemeButton() {
+    const body = document.body;
+    const teamButton = document.getElementById("teamActivityButton");
+    const isAdmin =
+      body.classList.contains("admin-mode") ||
+      !!document.querySelector(".admin-owner, .admin-mode, #adminToolsToggle");
+
+    let adminThemeButton =
+      document.getElementById("nezhaAdminThemeButton");
+
+    if (!isAdmin) {
+      if (adminThemeButton) adminThemeButton.remove();
+      return;
+    }
+
+    const teamIsVisible =
+      teamButton &&
+      getComputedStyle(teamButton).display !== "none" &&
+      teamButton.getClientRects().length > 0;
+
+    /*
+      一般成員沿用原本「組隊」位置；
+      管理員模式如果那顆被系統隱藏，就另外補一顆「主題」。
+    */
+    if (teamIsVisible) {
+      if (adminThemeButton) adminThemeButton.remove();
+      return;
+    }
+
+    const tools =
+      document.querySelector(".header-tools") ||
+      document.querySelector(".header .tools") ||
+      document.querySelector(".header");
+
+    if (!tools) return;
+
+    if (!adminThemeButton) {
+      adminThemeButton = document.createElement("button");
+      adminThemeButton.id = "nezhaAdminThemeButton";
+      adminThemeButton.type = "button";
+      adminThemeButton.className = "header-text-btn nezha-theme-button";
+
+      const adminButton =
+        tools.querySelector(".admin-button") ||
+        tools.querySelector("[class*=admin]");
+
+      if (adminButton && adminButton.parentElement === tools) {
+        tools.insertBefore(adminThemeButton, adminButton);
+      } else {
+        tools.appendChild(adminThemeButton);
+      }
+    }
+
+    bindThemeButton(adminThemeButton);
   }
 
   function applyNezhaUi() {
@@ -539,6 +615,39 @@
     }
 
     convertTeamButtonToTheme();
+    ensureAdminThemeButton();
+  }
+
+
+
+  function installThemeButtonObserver() {
+    if (window.__nezhaThemeButtonObserverInstalled) return;
+    window.__nezhaThemeButtonObserverInstalled = true;
+
+    let scheduled = false;
+
+    const refresh = () => {
+      if (scheduled) return;
+      scheduled = true;
+
+      requestAnimationFrame(() => {
+        scheduled = false;
+        convertTeamButtonToTheme();
+        ensureAdminThemeButton();
+      });
+    };
+
+    const observer = new MutationObserver(refresh);
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class", "style"]
+    });
+
+    window.addEventListener("resize", refresh);
+    refresh();
   }
 
 
@@ -630,6 +739,7 @@
   function init() {
     ensureThemeStyles();
     installAdminToolsScrollFix();
+    installThemeButtonObserver();
     applyTheme(safeGetTheme(), false);
     applyNezhaUi();
 
