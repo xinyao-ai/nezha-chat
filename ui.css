@@ -428,3 +428,85 @@ button.active,
 .header .online::before {
   background: #55c97a !important;
 }
+
+
+/* ===== Header 按鈕尺寸統一 ===== */
+.header-tools {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+}
+
+.header-tools button,
+.header-tools .header-icon-btn,
+.header-tools .search-toggle-btn,
+.header-tools .mention-inbox-btn,
+.header-tools .mention-notify-btn,
+.header-tools .header-text-btn,
+.header-tools .change-nickname-btn,
+.header-tools .admin-button,
+.header-tools .team-activity-entry {
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  border-radius: 10px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  line-height: 1 !important;
+}
+
+/* 圖示按鈕全部同寬 */
+.header-tools .header-icon-btn,
+.header-tools .search-toggle-btn,
+.header-tools .mention-inbox-btn,
+.header-tools .mention-notify-btn {
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* 有文字的按鈕只維持相同高度，寬度依內容 */
+.header-tools .header-text-btn,
+.header-tools .change-nickname-btn,
+.header-tools .admin-button,
+.header-tools .team-activity-entry {
+  min-width: 68px !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 700px) {
+  .header-tools {
+    gap: 6px !important;
+  }
+
+  .header-tools button,
+  .header-tools .header-icon-btn,
+  .header-tools .search-toggle-btn,
+  .header-tools .mention-inbox-btn,
+  .header-tools .mention-notify-btn,
+  .header-tools .header-text-btn,
+  .header-tools .change-nickname-btn,
+  .header-tools .admin-button,
+  .header-tools .team-activity-entry {
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+  }
+
+  .header-tools .header-icon-btn,
+  .header-tools .search-toggle-btn,
+  .header-tools .mention-inbox-btn,
+  .header-tools .mention-notify-btn {
+    width: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+  }
+}
