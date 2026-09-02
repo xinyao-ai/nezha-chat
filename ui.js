@@ -652,15 +652,17 @@
 
 
   /* =====================================================
-     管理員「管理工具」滑動修正
-     - 手機 / 電腦都可用滑鼠滾輪、觸控上下滑
-     - 不讓外層聊天室吃掉滑動事件
+     管理員「管理工具」滑動修正 V2
+     - 手機：手指可直接上下滑
+     - 電腦：滑鼠滾輪可直接上下滑
+     - 強制由管理工具面板自己吃掉捲動，不再被外層聊天室攔截
   ====================================================== */
   function installAdminToolsScrollFix() {
-    if (document.getElementById("nezhaAdminToolsScrollFix")) return;
+    if (window.__nezhaAdminToolsScrollFixV2) return;
+    window.__nezhaAdminToolsScrollFixV2 = true;
 
     const style = document.createElement("style");
-    style.id = "nezhaAdminToolsScrollFix";
+    style.id = "nezhaAdminToolsScrollFixV2";
     style.textContent = `
       #adminToolsPanel,
       .admin-tools-panel {
@@ -670,31 +672,28 @@
       #adminToolsPanel.show,
       .admin-tools-panel.show {
         display: block !important;
-        max-height: min(58vh, 620px) !important;
-        overflow-y: auto !important;
+        height: auto !important;
+        max-height: 56vh !important;
+        overflow-y: scroll !important;
         overflow-x: hidden !important;
-        overscroll-behavior-y: contain !important;
+        overscroll-behavior: contain !important;
         -webkit-overflow-scrolling: touch !important;
         touch-action: pan-y !important;
         pointer-events: auto !important;
+        position: relative !important;
         scrollbar-gutter: stable !important;
       }
 
-      #adminToolsPanel.show * {
-        touch-action: auto;
-      }
-
-      #adminToolsPanel.show button,
-      #adminToolsPanel.show input,
-      #adminToolsPanel.show select,
-      #adminToolsPanel.show textarea {
-        touch-action: manipulation !important;
+      #adminToolsPanel.show .admin-tools-grid,
+      #adminToolsPanel.show .admin-tools-section,
+      #adminToolsPanel.show .admin-count-settings-panel {
+        overflow: visible !important;
       }
 
       @media (max-width: 700px) {
         #adminToolsPanel.show,
         .admin-tools-panel.show {
-          max-height: 54vh !important;
+          max-height: 52vh !important;
           padding-right: 8px !important;
         }
       }
@@ -702,38 +701,125 @@
       @media (max-width: 420px) {
         #adminToolsPanel.show,
         .admin-tools-panel.show {
-          max-height: 50vh !important;
+          max-height: 48vh !important;
         }
       }
     `;
     document.head.appendChild(style);
 
     function bindPanel(panel) {
-      if (!panel || panel.dataset.scrollFixBound === "1") return;
+      if (!panel || panel.dataset.scrollFixV2Bound === "1") return;
+      panel.dataset.scrollFixV2Bound = "1";
 
-      panel.dataset.scrollFixBound = "1";
+      /* 電腦：直接控制面板 scrollTop */
+      panel.addEventListener(
+        "wheel",
+        function(event) {
+          if (!panel.classList.contains("show")) return;
 
-      ["wheel", "touchmove", "pointermove"].forEach(type => {
-        panel.addEventListener(
-          type,
-          event => {
+          const maxScroll =
+            panel.scrollHeight -
+            panel.clientHeight;
+
+          if (maxScroll <= 0) return;
+
+          panel.scrollTop +=
+            event.deltaY;
+
+          event.preventDefault();
+          event.stopPropagation();
+        },
+        { passive: false }
+      );
+
+      /* 手機：手動追蹤手指位移，避免外層吃掉滑動 */
+      let lastTouchY = null;
+
+      panel.addEventListener(
+        "touchstart",
+        function(event) {
+          if (!panel.classList.contains("show")) return;
+          if (!event.touches || !event.touches.length) return;
+
+          lastTouchY =
+            event.touches[0].clientY;
+        },
+        { passive: true }
+      );
+
+      panel.addEventListener(
+        "touchmove",
+        function(event) {
+          if (
+            !panel.classList.contains("show") ||
+            lastTouchY === null ||
+            !event.touches ||
+            !event.touches.length
+          ) {
+            return;
+          }
+
+          const currentY =
+            event.touches[0].clientY;
+
+          const delta =
+            lastTouchY -
+            currentY;
+
+          const maxScroll =
+            panel.scrollHeight -
+            panel.clientHeight;
+
+          if (maxScroll > 0) {
+            panel.scrollTop += delta;
+            lastTouchY = currentY;
+
+            event.preventDefault();
             event.stopPropagation();
-          },
-          { passive: true }
-        );
-      });
+          }
+        },
+        { passive: false }
+      );
+
+      panel.addEventListener(
+        "touchend",
+        function() {
+          lastTouchY = null;
+        },
+        { passive: true }
+      );
+
+      panel.addEventListener(
+        "touchcancel",
+        function() {
+          lastTouchY = null;
+        },
+        { passive: true }
+      );
     }
 
-    bindPanel(document.getElementById("adminToolsPanel"));
+    function bindNow() {
+      bindPanel(
+        document.getElementById(
+          "adminToolsPanel"
+        )
+      );
+    }
 
-    const observer = new MutationObserver(() => {
-      bindPanel(document.getElementById("adminToolsPanel"));
-    });
+    bindNow();
 
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
+    const observer =
+      new MutationObserver(
+        bindNow
+      );
+
+    observer.observe(
+      document.body,
+      {
+        childList: true,
+        subtree: true
+      }
+    );
   }
 
   function init() {
