@@ -180,6 +180,21 @@
         border-bottom-color:color-mix(in srgb, var(--th-accent) 60%, #d8d0c5) !important;
       }
 
+
+      .nezha-category-strip {
+        position: relative !important;
+        z-index: 30 !important;
+        pointer-events: auto !important;
+      }
+
+      .nezha-category-link {
+        position: relative !important;
+        z-index: 31 !important;
+        pointer-events: auto !important;
+        text-decoration: none !important;
+        color: inherit !important;
+      }
+
       .nezha-category-link,
       .nezha-category-coming {
         appearance: none !important;
@@ -606,6 +621,158 @@
     bindThemeButton(adminThemeButton);
   }
 
+
+  function ensureCategoryLinks() {
+    const header =
+      document.querySelector(".header");
+
+    let strip =
+      document.querySelector(
+        ".nezha-category-strip"
+      );
+
+    if (!strip && header) {
+      strip =
+        document.createElement(
+          "div"
+        );
+
+      strip.className =
+        "nezha-category-strip";
+
+      strip.setAttribute(
+        "aria-label",
+        "娛樂分類"
+      );
+
+      header.insertAdjacentElement(
+        "afterend",
+        strip
+      );
+    }
+
+    if (!strip) return;
+
+    if (
+      strip.dataset.linkVersion ===
+      "v3"
+    ) {
+      return;
+    }
+
+    /*
+      重點：
+      Worker 本身已經會先建立這四格，
+      所以前一版「只有不存在才建立按鈕」根本沒執行到。
+      這版直接把現有四格改成真正 <a> 連結。
+    */
+    strip.innerHTML = `
+      <a
+        class="nezha-category-item nezha-category-link"
+        href="https://awu7757-sys.github.io/habao-football-ai/"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="開啟體育分析"
+      >
+        ⚽ <span>體育</span>
+      </a>
+
+      <a
+        class="nezha-category-item nezha-category-link"
+        href="https://xinyao-ai.github.io/xinyao-ai/?v=5000"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="開啟老虎機分析"
+      >
+        🎰 <span>老虎機</span>
+      </a>
+
+      <a
+        class="nezha-category-item nezha-category-link"
+        href="https://xinyao-ai.github.io/xinyao-539/"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="開啟彩票分析"
+      >
+        🎟️ <span>彩票</span>
+      </a>
+
+      <button
+        class="nezha-category-item nezha-category-coming"
+        type="button"
+        aria-label="跑車功能尚未設定"
+        title="跑車網址尚未設定"
+      >
+        🏎️ <span>跑車</span>
+      </button>
+    `;
+
+    strip.dataset.linkVersion =
+      "v3";
+
+    strip.style.setProperty(
+      "pointer-events",
+      "auto",
+      "important"
+    );
+
+    strip
+      .querySelectorAll(
+        ".nezha-category-link"
+      )
+      .forEach(function(link) {
+        link.style.setProperty(
+          "pointer-events",
+          "auto",
+          "important"
+        );
+
+        link.style.setProperty(
+          "text-decoration",
+          "none",
+          "important"
+        );
+
+        /*
+          保險：若瀏覽器 / iframe 對 target=_blank 有特殊行為，
+          click 時再直接指定新分頁。
+        */
+        link.addEventListener(
+          "click",
+          function(event) {
+            const url =
+              link.getAttribute(
+                "href"
+              );
+
+            if (!url) return;
+
+            event.stopPropagation();
+
+            const opened =
+              window.open(
+                url,
+                "_blank",
+                "noopener,noreferrer"
+              );
+
+            /*
+              如果 popup 被擋，退回目前分頁直接開。
+            */
+            if (!opened) {
+              window.location.href =
+                url;
+            }
+
+            event.preventDefault();
+          },
+          {
+            capture: true
+          }
+        );
+      });
+  }
+
   function applyNezhaUi() {
     document.title = "👺哪吒全能娛樂基地🚩";
 
@@ -627,73 +794,7 @@
       .find(el => el.childElementCount === 0 && el.textContent.trim() === "HD888 ADMIN");
     if (adminHeading) adminHeading.textContent = "NEZHA ADMIN";
 
-    const header = document.querySelector(".header");
-    if (header && !document.querySelector(".nezha-category-strip")) {
-      const strip = document.createElement("div");
-      strip.className = "nezha-category-strip";
-      strip.setAttribute("aria-label", "娛樂分類");
-      strip.innerHTML = `
-        <button
-          class="nezha-category-item nezha-category-link"
-          type="button"
-          data-url="https://awu7757-sys.github.io/habao-football-ai/"
-          aria-label="開啟體育分析"
-        >
-          ⚽ <span>體育</span>
-        </button>
-
-        <button
-          class="nezha-category-item nezha-category-link"
-          type="button"
-          data-url="https://xinyao-ai.github.io/xinyao-ai/?v=5000"
-          aria-label="開啟老虎機分析"
-        >
-          🎰 <span>老虎機</span>
-        </button>
-
-        <button
-          class="nezha-category-item nezha-category-link"
-          type="button"
-          data-url="https://xinyao-ai.github.io/xinyao-539/"
-          aria-label="開啟彩票分析"
-        >
-          🎟️ <span>彩票</span>
-        </button>
-
-        <button
-          class="nezha-category-item nezha-category-coming"
-          type="button"
-          aria-label="跑車功能尚未設定"
-          title="跑車網址尚未設定"
-        >
-          🏎️ <span>跑車</span>
-        </button>
-      `;
-
-      strip
-        .querySelectorAll(".nezha-category-link")
-        .forEach(function(button) {
-          button.addEventListener(
-            "click",
-            function() {
-              const url =
-                String(
-                  button.dataset.url || ""
-                ).trim();
-
-              if (!url) return;
-
-              window.open(
-                url,
-                "_blank",
-                "noopener,noreferrer"
-              );
-            }
-          );
-        });
-
-      header.insertAdjacentElement("afterend", strip);
-    }
+    ensureCategoryLinks();
 
     convertTeamButtonToTheme();
     ensureAdminThemeButton();
@@ -713,6 +814,7 @@
 
       requestAnimationFrame(() => {
         scheduled = false;
+        ensureCategoryLinks();
         convertTeamButtonToTheme();
         ensureAdminThemeButton();
       });
