@@ -1227,8 +1227,514 @@
     );
   }
 
+
+  /* =====================================================
+     管理後台收合模式
+     - 平常只佔一條小橫列
+     - 點一下才展開完整後台
+     - 會記住收合 / 展開狀態
+  ====================================================== */
+  function installAdminDashboardCollapse() {
+    if (window.__nezhaAdminDashboardCollapse) return;
+    window.__nezhaAdminDashboardCollapse = true;
+
+    const STORAGE_KEY = "nezhaAdminDashboardCollapsed";
+
+    const style = document.createElement("style");
+    style.id = "nezhaAdminDashboardCollapseStyle";
+    style.textContent = `
+      #adminPanel {
+        transition: padding .18s ease, min-height .18s ease;
+      }
+
+      #adminPanel .nezha-admin-compact-bar {
+        display: none;
+        width: 100%;
+        min-height: 44px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 8px 12px;
+        border: 1px solid var(--th-accent, #c29a56);
+        border-radius: 12px;
+        background: linear-gradient(
+          180deg,
+          var(--th-soft2, #fffaf1),
+          var(--th-soft, #efe5d7)
+        );
+        color: var(--th-text, #2a221c);
+        box-sizing: border-box;
+        cursor: pointer;
+        font-weight: 900;
+      }
+
+      #adminPanel .nezha-admin-compact-left {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        min-width: 0;
+      }
+
+      #adminPanel .nezha-admin-compact-title {
+        white-space: nowrap;
+      }
+
+      #adminPanel .nezha-admin-compact-stats {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--th-muted, #786e63);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      #adminPanel .nezha-admin-compact-open {
+        flex: 0 0 auto;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: var(--th-main, #5d4732);
+        color: var(--th-actionText, #f8ebc4);
+        font-size: 12px;
+      }
+
+      #adminPanel .nezha-admin-collapse-btn {
+        margin-left: 8px;
+        min-height: 38px !important;
+        padding: 0 12px !important;
+        border-radius: 10px !important;
+      }
+
+      #adminPanel.nezha-admin-collapsed {
+        padding: 8px 12px !important;
+      }
+
+      #adminPanel.nezha-admin-collapsed .nezha-admin-compact-bar {
+        display: flex !important;
+      }
+
+      #adminPanel.nezha-admin-collapsed .admin-dashboard-head,
+      #adminPanel.nezha-admin-collapsed .admin-identity-info,
+      #adminPanel.nezha-admin-collapsed .admin-room-stats,
+      #adminPanel.nezha-admin-collapsed .admin-nav-tabs,
+      #adminPanel.nezha-admin-collapsed #adminToolsToggle,
+      #adminPanel.nezha-admin-collapsed #adminToolsPanel,
+      #adminPanel.nezha-admin-collapsed #adminPanelContentCard {
+        display: none !important;
+      }
+
+      @media (max-width: 700px) {
+        #adminPanel.nezha-admin-collapsed {
+          padding: 7px 9px !important;
+        }
+
+        #adminPanel .nezha-admin-compact-bar {
+          min-height: 42px;
+          padding: 7px 9px;
+        }
+
+        #adminPanel .nezha-admin-compact-title {
+          font-size: 13px;
+        }
+
+        #adminPanel .nezha-admin-compact-stats {
+          gap: 6px;
+          font-size: 11px;
+        }
+
+        #adminPanel .nezha-admin-compact-open {
+          padding: 5px 8px;
+          font-size: 11px;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    function bind() {
+      const panel = document.getElementById("adminPanel");
+
+      if (!panel || panel.dataset.collapseBound === "1") return;
+
+      panel.dataset.collapseBound = "1";
+
+      const head = panel.querySelector(".admin-dashboard-head");
+      if (!head) return;
+
+      const compact = document.createElement("div");
+      compact.className = "nezha-admin-compact-bar";
+      compact.innerHTML = `
+        <div class="nezha-admin-compact-left">
+          <span class="nezha-admin-compact-title">👑 管理後台</span>
+          <span class="nezha-admin-compact-stats">
+            <span>🟢 <b id="nezhaCompactOnline">0</b></span>
+            <span>👥 <b id="nezhaCompactGroup">0</b></span>
+          </span>
+        </div>
+        <span class="nezha-admin-compact-open">展開 ▾</span>
+      `;
+
+      panel.insertBefore(compact, panel.firstChild);
+
+      const collapseButton = document.createElement("button");
+      collapseButton.type = "button";
+      collapseButton.className = "nezha-admin-collapse-btn";
+      collapseButton.textContent = "⇧ 收合後台";
+
+      const refreshButton = head.querySelector(".admin-refresh-btn");
+
+      if (refreshButton) {
+        refreshButton.insertAdjacentElement("beforebegin", collapseButton);
+      } else {
+        head.appendChild(collapseButton);
+      }
+
+      function syncStats() {
+        const online = document.getElementById("adminOnlineCountValue");
+        const group = document.getElementById("adminGroupMemberCountValue");
+        const compactOnline = document.getElementById("nezhaCompactOnline");
+        const compactGroup = document.getElementById("nezhaCompactGroup");
+
+        if (online && compactOnline) {
+          compactOnline.textContent = online.textContent || "0";
+        }
+
+        if (group && compactGroup) {
+          compactGroup.textContent = group.textContent || "0";
+        }
+      }
+
+      function setCollapsed(collapsed, save = true) {
+        panel.classList.toggle("nezha-admin-collapsed", !!collapsed);
+
+        if (collapsed) {
+          const toolsPanel = document.getElementById("adminToolsPanel");
+          const toolsToggle = document.getElementById("adminToolsToggle");
+
+          if (toolsPanel) toolsPanel.classList.remove("show");
+
+          if (toolsToggle) {
+            toolsToggle.classList.remove("active");
+            toolsToggle.setAttribute("aria-expanded", "false");
+          }
+        }
+
+        syncStats();
+
+        if (save) {
+          try {
+            localStorage.setItem(
+              STORAGE_KEY,
+              collapsed ? "1" : "0"
+            );
+          } catch {}
+        }
+
+        setTimeout(function () {
+          if (typeof scrollBottom === "function") {
+            scrollBottom();
+          }
+        }, 50);
+      }
+
+      collapseButton.addEventListener("click", function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        setCollapsed(true);
+      });
+
+      compact.addEventListener("click", function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        setCollapsed(false);
+      });
+
+      const countObserver = new MutationObserver(syncStats);
+
+      const online = document.getElementById("adminOnlineCountValue");
+      const group = document.getElementById("adminGroupMemberCountValue");
+
+      if (online) {
+        countObserver.observe(online, {
+          childList: true,
+          characterData: true,
+          subtree: true
+        });
+      }
+
+      if (group) {
+        countObserver.observe(group, {
+          childList: true,
+          characterData: true,
+          subtree: true
+        });
+      }
+
+      syncStats();
+
+      let saved = null;
+
+      try {
+        saved = localStorage.getItem(STORAGE_KEY);
+      } catch {}
+
+      setCollapsed(
+        saved === null ? true : saved === "1",
+        false
+      );
+    }
+
+    bind();
+
+    const observer = new MutationObserver(bind);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+
+  /* =====================================================
+     管理後台改成「彈出視窗」
+     -----------------------------------------------------
+     平常完全不佔聊天室高度。
+     點右上「👑 官方管理員」才打開完整後台。
+  ====================================================== */
+  function installAdminDashboardDrawer() {
+    if (window.__nezhaAdminDashboardDrawer) return;
+    window.__nezhaAdminDashboardDrawer = true;
+
+    const style = document.createElement("style");
+    style.id = "nezhaAdminDashboardDrawerStyle";
+    style.textContent = `
+      #adminPanel.nezha-admin-drawer-ready {
+        display: none !important;
+        position: fixed !important;
+        z-index: 2147482500 !important;
+        top: max(72px, env(safe-area-inset-top)) !important;
+        left: 50% !important;
+        right: auto !important;
+        bottom: auto !important;
+        width: min(720px, calc(100vw - 20px)) !important;
+        max-width: 720px !important;
+        max-height: calc(100dvh - 92px) !important;
+        margin: 0 !important;
+        padding: 14px !important;
+        transform: translateX(-50%) !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        overscroll-behavior: contain !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
+        border: 1px solid var(--th-accent, #c29a56) !important;
+        border-radius: 18px !important;
+        background: var(--th-page, #f7f2e8) !important;
+        box-shadow: 0 22px 60px rgba(0,0,0,.30) !important;
+        box-sizing: border-box !important;
+      }
+
+      #adminPanel.nezha-admin-drawer-ready.nezha-admin-drawer-open {
+        display: block !important;
+      }
+
+      #nezhaAdminDrawerBackdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 2147482400;
+        background: rgba(23,19,16,.46);
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
+      }
+
+      #nezhaAdminDrawerBackdrop.show {
+        display: block;
+      }
+
+      #adminPanel .nezha-admin-drawer-close {
+        min-width: 72px !important;
+        min-height: 38px !important;
+        padding: 0 12px !important;
+        margin-left: 8px !important;
+        border-radius: 10px !important;
+        background: var(--th-main, #5d4732) !important;
+        color: var(--th-actionText, #f8ebc4) !important;
+        border: 1px solid var(--th-accent, #c29a56) !important;
+        box-shadow: none !important;
+        white-space: nowrap !important;
+      }
+
+      #adminBadge.nezha-admin-drawer-trigger {
+        cursor: pointer !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        transition: transform .12s ease, filter .12s ease;
+      }
+
+      #adminBadge.nezha-admin-drawer-trigger:hover {
+        filter: brightness(1.06);
+      }
+
+      #adminBadge.nezha-admin-drawer-trigger:active {
+        transform: scale(.97);
+      }
+
+      body.nezha-admin-drawer-open {
+        overflow: hidden !important;
+      }
+
+      body.nezha-admin-drawer-open .hd-floating-login-button {
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+
+      /* 上一版收合元件全部取消，避免多佔一條 */
+      #adminPanel .nezha-admin-compact-bar,
+      #adminPanel .nezha-admin-collapse-btn {
+        display: none !important;
+      }
+
+      @media (max-width: 700px) {
+        #adminPanel.nezha-admin-drawer-ready {
+          top: max(58px, env(safe-area-inset-top)) !important;
+          width: calc(100vw - 12px) !important;
+          max-height: calc(100dvh - 70px) !important;
+          padding: 10px !important;
+          border-radius: 15px !important;
+        }
+
+        #adminPanel .admin-dashboard-head {
+          position: sticky !important;
+          top: -10px !important;
+          z-index: 50 !important;
+          padding: 8px 4px 10px !important;
+          background: var(--th-page, #f7f2e8) !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    function bind() {
+      const panel = document.getElementById("adminPanel");
+      const badge = document.getElementById("adminBadge");
+
+      if (!panel || !badge) return;
+
+      panel.classList.add("nezha-admin-drawer-ready");
+
+      let backdrop = document.getElementById("nezhaAdminDrawerBackdrop");
+
+      if (!backdrop) {
+        backdrop = document.createElement("div");
+        backdrop.id = "nezhaAdminDrawerBackdrop";
+        document.body.appendChild(backdrop);
+      }
+
+      let closeButton = panel.querySelector(".nezha-admin-drawer-close");
+
+      if (!closeButton) {
+        closeButton = document.createElement("button");
+        closeButton.type = "button";
+        closeButton.className = "nezha-admin-drawer-close";
+        closeButton.textContent = "× 關閉";
+
+        const head = panel.querySelector(".admin-dashboard-head");
+        const refresh = head?.querySelector(".admin-refresh-btn");
+
+        if (refresh) {
+          refresh.insertAdjacentElement("beforebegin", closeButton);
+        } else if (head) {
+          head.appendChild(closeButton);
+        }
+      }
+
+      function closeDrawer() {
+        panel.classList.remove("nezha-admin-drawer-open");
+        backdrop.classList.remove("show");
+        document.body.classList.remove("nezha-admin-drawer-open");
+        badge.setAttribute("aria-expanded", "false");
+      }
+
+      function openDrawer() {
+        panel.classList.add("nezha-admin-drawer-open");
+        backdrop.classList.add("show");
+        document.body.classList.add("nezha-admin-drawer-open");
+        badge.setAttribute("aria-expanded", "true");
+
+        /* 每次打開都從後台最上面開始 */
+        panel.scrollTop = 0;
+      }
+
+      function toggleDrawer(event) {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+
+        if (panel.classList.contains("nezha-admin-drawer-open")) {
+          closeDrawer();
+        } else {
+          openDrawer();
+        }
+      }
+
+      if (badge.dataset.drawerBound !== "1") {
+        badge.dataset.drawerBound = "1";
+        badge.classList.add("nezha-admin-drawer-trigger");
+        badge.setAttribute("role", "button");
+        badge.setAttribute("tabindex", "0");
+        badge.setAttribute("aria-expanded", "false");
+        badge.title = "開啟管理後台";
+
+        badge.addEventListener("click", toggleDrawer);
+
+        badge.addEventListener("keydown", function(event) {
+          if (event.key === "Enter" || event.key === " ") {
+            toggleDrawer(event);
+          }
+        });
+      }
+
+      if (closeButton.dataset.drawerBound !== "1") {
+        closeButton.dataset.drawerBound = "1";
+        closeButton.addEventListener("click", closeDrawer);
+      }
+
+      if (backdrop.dataset.drawerBound !== "1") {
+        backdrop.dataset.drawerBound = "1";
+        backdrop.addEventListener("click", closeDrawer);
+      }
+
+      if (document.body.dataset.adminDrawerEscBound !== "1") {
+        document.body.dataset.adminDrawerEscBound = "1";
+
+        document.addEventListener("keydown", function(event) {
+          if (
+            event.key === "Escape" &&
+            panel.classList.contains("nezha-admin-drawer-open")
+          ) {
+            closeDrawer();
+          }
+        });
+      }
+
+      /*
+        預設一定關閉。
+        所以聊天室平常完全不會被管理後台吃掉高度。
+      */
+      closeDrawer();
+    }
+
+    bind();
+
+    const observer = new MutationObserver(bind);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
   function init() {
     ensureThemeStyles();
+    installAdminDashboardDrawer();
     installNicknamePlainStyle();
     installFloatingBallDragFix();
     installAdminToolsScrollFix();
