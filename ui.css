@@ -1,531 +1,110 @@
-/* 👺哪吒全能娛樂基地｜舒服版 UI
-   重點：拔掉整站紅按鈕，改成奶白 / 深棕 / 金色 / 石墨灰。 */
+/* ===== 曜石黑金：真正黑金版 ===== */
 
-:root {
-  --nz-obsidian: #201a16;
-  --nz-obsidian-2: #2c241d;
-  --nz-gold: #c29a56;
-  --nz-gold-soft: #ead4a1;
-  --nz-ivory: #f7f2e8;
-  --nz-ivory-2: #fffdf8;
-  --nz-sand: #efe5d7;
-  --nz-sand-2: #e7dac7;
-  --nz-brown: #5d4732;
-  --nz-brown-2: #75583d;
-  --nz-stone: #6d655d;
-  --nz-stone-2: #555048;
-  --nz-text: #2a221c;
-  --nz-muted: #786e63;
-  --nz-line: #d7c9b3;
-  --nz-shadow: rgba(42, 34, 28, .12);
+html[data-nezha-theme="obsidian"] body {
+  background: #111111 !important;
+  color: #f3ead8 !important;
 }
 
-html,
-body {
+html[data-nezha-theme="obsidian"] .page,
+html[data-nezha-theme="obsidian"] .join {
+  background: #171717 !important;
+  color: #f3ead8 !important;
+}
+
+html[data-nezha-theme="obsidian"] .header {
   background:
-    radial-gradient(circle at 10% 12%, rgba(194,154,86,.08), transparent 30%),
-    radial-gradient(circle at 90% 90%, rgba(93,71,50,.06), transparent 28%),
-    #ece5da !important;
-  color: var(--nz-text) !important;
+    linear-gradient(
+      135deg,
+      #050505,
+      #151515 70%,
+      #211b12
+    ) !important;
+  border-bottom-color: #c59b4e !important;
 }
 
-body,
-input,
-textarea,
-select,
-button {
-  color: var(--nz-text);
+html[data-nezha-theme="obsidian"] .header .title,
+html[data-nezha-theme="obsidian"] #roomTitleText {
+  color: #f2d38b !important;
 }
 
-.page {
-  width: min(100%, 880px) !important;
-  max-width: 880px !important;
-  background: var(--nz-ivory) !important;
-  border-left: 1px solid #d8ccb9 !important;
-  border-right: 1px solid #d8ccb9 !important;
-  box-shadow: 0 0 38px var(--nz-shadow) !important;
+html[data-nezha-theme="obsidian"] .nezha-category-strip {
+  background: #1c1c1c !important;
+  border-bottom-color: #6f5831 !important;
 }
 
-/* 登入頁 */
-.join {
+html[data-nezha-theme="obsidian"] .nezha-category-item {
   background:
-    linear-gradient(180deg, #ebe4d9 0%, #f5f0e7 42%, #f7f2e8 100%) !important;
-  color: var(--nz-text) !important;
+    linear-gradient(
+      180deg,
+      #292929,
+      #1b1b1b
+    ) !important;
+  color: #f0d89e !important;
+  border-color: #9c793e !important;
 }
 
-.join form,
-.admin-panel,
-.admin-card,
-.card,
-.panel,
-.member,
-.blocked-row,
-.report-admin-card,
-.admin-account-card,
-.lottery-admin-activity-card,
-.activity-admin-team-card,
-.shared-notepad-card {
-  background: var(--nz-ivory-2) !important;
-  border: 1px solid #dccfba !important;
-  box-shadow: 0 10px 28px rgba(40,34,28,.08) !important;
+html[data-nezha-theme="obsidian"] .chat,
+html[data-nezha-theme="obsidian"] .messages,
+html[data-nezha-theme="obsidian"] .messages-wrap,
+html[data-nezha-theme="obsidian"] #messages {
+  background: #161616 !important;
+  color: #f1e9dc !important;
 }
 
-.logo {
-  background: #fff !important;
-  border-color: var(--nz-gold) !important;
-  box-shadow: 0 0 0 5px rgba(194,154,86,.08), 0 10px 25px rgba(39,32,27,.13) !important;
+html[data-nezha-theme="obsidian"] .composer,
+html[data-nezha-theme="obsidian"] .bottom {
+  background: #202020 !important;
+  border-top-color: #71572c !important;
 }
 
-.logo img,
-.header-brand-mark img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  display: block !important;
-}
-
-.join h1,
-.admin-panel h1,
-.admin-panel h2,
-.admin-panel h3,
-.card h1,
-.card h2,
-.card h3 {
-  color: #241e19 !important;
-  text-shadow: none !important;
-  font-weight: 900 !important;
-}
-
-.join p,
-.join-install-hint,
-.admin-panel small,
-.admin-panel .muted,
-.system,
-.empty,
-.turnstile-note,
-[class*="meta"],
-[class*="hint"],
-[class*="note"] {
-  color: var(--nz-muted) !important;
-}
-
-/* 輸入框一定要清楚 */
-.join input,
-#nickname,
-.admin-join-login-input,
-.bottom input[type="text"],
-#message,
-.composer input[type="text"],
-textarea,
-input[type="text"],
-input[type="password"],
-input[type="search"],
-input[type="number"] {
-  background: #fff !important;
-  color: #241f1b !important;
-  -webkit-text-fill-color: #241f1b !important;
-  caret-color: var(--nz-brown) !important;
-  border: 1px solid #ccbca5 !important;
-  font-weight: 700 !important;
-  box-shadow: none !important;
-}
-
-.join input::placeholder,
-#nickname::placeholder,
-.admin-join-login-input::placeholder,
-.bottom input[type="text"]::placeholder,
-#message::placeholder,
-.composer input[type="text"]::placeholder,
-textarea::placeholder,
-input[type="text"]::placeholder,
-input[type="password"]::placeholder,
-input[type="search"]::placeholder,
-input[type="number"]::placeholder {
-  color: #998f84 !important;
-  -webkit-text-fill-color: #998f84 !important;
-  opacity: 1 !important;
-}
-
-select,
-.mute-select,
-.admin-panel select {
-  background: #fffaf3 !important;
-  color: #342a22 !important;
-  border: 1px solid #ccbca5 !important;
-  box-shadow: none !important;
-}
-
-/* 所有按鈕基礎：不要紅，統一奶茶色 */
-button,
-.btn,
-input[type="button"],
-input[type="submit"],
-.join-install-button,
-.header-icon-btn,
-.header .search-toggle-btn,
-.header .mention-inbox-btn,
-.header .mention-notify-btn,
-.image-btn,
-.admin-nav-btn,
-.admin-quick-btn,
-[class*="admin-"][class*="btn"],
-[class*="report-"][class*="btn"],
-[class*="lottery-"][class*="btn"],
-[class*="activity-"][class*="btn"] {
-  background: linear-gradient(180deg, #f7f1e7, #eadfcf) !important;
-  color: #493726 !important;
-  border: 1px solid #c7a86a !important;
-  box-shadow: 0 2px 6px rgba(66,49,32,.07) !important;
-  text-shadow: none !important;
-}
-
-button:hover,
-.btn:hover,
-input[type="button"]:hover,
-input[type="submit"]:hover {
-  filter: brightness(.98);
-}
-
-/* 主要按鈕：深棕金字 */
-#joinButton,
-.join button[type="submit"],
-.admin-join-submit,
-.send-btn,
-.header-text-btn,
-.header .change-nickname-btn,
-.header .admin-button,
-.team-activity-entry,
-#adminToolsToggle,
-#adminCountSettingsToggle,
-.admin-login-open,
-.admin-button,
-button.active,
-.admin-nav-btn.active,
-.shared-notepad-share,
-.shared-notepad-save,
-.lottery-admin-create-btn,
-.activity-admin-save-btn,
-.activity-admin-open-btn,
-.announcement-send-btn,
-.notepad-share-btn {
-  background: linear-gradient(180deg, var(--nz-brown-2), var(--nz-brown)) !important;
-  color: #f8ebc4 !important;
-  border: 1px solid #8e6c45 !important;
-  box-shadow: 0 5px 12px rgba(70,52,36,.15) !important;
-}
-
-/* 危險 / 管理操作：石墨灰，不要紅 */
-.mute-btn,
-.unmute-btn,
-.kick-btn,
-.block-btn,
-.unblock-btn,
-.delete-btn,
-.remove-btn,
-.close-btn,
-.collapse-btn,
-[class*="delete-btn"],
-[class*="disable-btn"],
-[class*="remove-btn"],
-#memberList .member-actions button,
-#blockedList button,
-.report-admin-controls button,
-.admin-account-delete-btn,
-.admin-account-disable-btn,
-.shared-notepad-delete-btn,
-.shared-notepad-close,
-.install-guide-close {
-  background: linear-gradient(180deg, var(--nz-stone), var(--nz-stone-2)) !important;
-  color: #f7f3eb !important;
-  border: 1px solid #4e4942 !important;
-  box-shadow: none !important;
-}
-
-/* 頂部 */
-.header {
-  background: linear-gradient(135deg, #1d1916 0%, #28221c 68%, #33281d 100%) !important;
-  border-bottom: 1px solid #af8b50 !important;
-  box-shadow: 0 4px 14px rgba(25,20,17,.14) !important;
-}
-
-.header .title,
-#roomTitleText {
-  color: #f3dfb2 !important;
-  text-shadow: none !important;
-}
-
-.header .online,
-.header .group-member-count,
-.online {
-  color: #ece2d1 !important;
-}
-
-/* 四大分類 */
-.nezha-category-strip {
-  display: grid !important;
-  grid-template-columns: repeat(4, minmax(0,1fr)) !important;
-  gap: 7px !important;
-  padding: 8px 12px 9px !important;
-  background: #efe7db !important;
-  border-bottom: 1px solid #d4c2a5 !important;
-}
-
-.nezha-category-item {
-  min-height: 34px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 5px !important;
-  background: linear-gradient(180deg, #fffaf1, #f2e8d7) !important;
-  color: #4e3a28 !important;
-  border: 1px solid #c7a562 !important;
-  border-radius: 10px !important;
-  font-size: 12px !important;
-  font-weight: 900 !important;
-}
-
-/* 聊天區 */
-.chat,
-.messages,
-.messages-wrap,
-.message-list,
-#messages {
+html[data-nezha-theme="obsidian"] button,
+html[data-nezha-theme="obsidian"] .btn,
+html[data-nezha-theme="obsidian"] .header-icon-btn {
   background:
-    linear-gradient(rgba(252,249,243,.96), rgba(247,242,233,.98)),
-    radial-gradient(circle at 50% 0%, rgba(194,154,86,.07), transparent 38%) !important;
+    linear-gradient(
+      180deg,
+      #343434,
+      #252525
+    ) !important;
+  color: #f2ddb0 !important;
+  border-color: #9b793d !important;
 }
 
-.composer,
-.input-bar,
-.chat-input-wrap,
-.bottom {
-  background: #fffdf8 !important;
-  border-top: 1px solid #d9cebd !important;
+html[data-nezha-theme="obsidian"] #joinButton,
+html[data-nezha-theme="obsidian"] .send-btn,
+html[data-nezha-theme="obsidian"] .header-text-btn,
+html[data-nezha-theme="obsidian"] button.active {
+  background:
+    linear-gradient(
+      180deg,
+      #8d6b32,
+      #62491f
+    ) !important;
+  color: #fff6df !important;
+  border-color: #c59b4e !important;
 }
 
-/* 聊天泡泡 / 一般內容 */
-.message,
-.msg,
-.bubble,
-.chat-item,
-.list-row,
-.member,
-.blocked-row {
-  color: var(--nz-text) !important;
+html[data-nezha-theme="obsidian"] input,
+html[data-nezha-theme="obsidian"] textarea,
+html[data-nezha-theme="obsidian"] select {
+  background: #252525 !important;
+  color: #f4ecdf !important;
+  -webkit-text-fill-color: #f4ecdf !important;
+  border-color: #74603c !important;
 }
 
-/* 管理後台卡片 / 區塊標題 */
-.admin-panel,
-.admin-tools-panel,
-#adminToolsPanel,
-#adminPanel,
-#memberList,
-#blockedList,
-#reportList,
-#adminLogs,
-#adminAccounts,
-#adminPanelContentCard,
-[class*="admin-section"],
-[class*="admin-card"],
-[class*="admin-panel"] {
-  background: var(--nz-ivory) !important;
-  color: var(--nz-text) !important;
+/* 主題選單裡的曜石黑金預覽 */
+.nz-theme-option[data-theme="obsidian"]
+.nz-swatch:nth-child(1) {
+  background: #171717 !important;
 }
 
-.admin-panel .stat-card,
-.admin-panel .summary-card,
-.admin-panel .tool-card,
-.admin-panel .info-card,
-[class*="stats"],
-[class*="summary"] {
-  background: var(--nz-ivory-2) !important;
-  border: 1px solid #d9ccb7 !important;
-  color: var(--nz-text) !important;
+.nz-theme-option[data-theme="obsidian"]
+.nz-swatch:nth-child(2) {
+  background: #343434 !important;
 }
 
-/* 連線與提示 */
-.turnstile-status {
-  color: #497047 !important;
-  font-weight: 800 !important;
-}
-
-/* 浮動球 */
-.hd-floating-login-button {
-  width: 92px !important;
-  height: 92px !important;
-  right: 10px !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  filter:
-    drop-shadow(0 5px 8px rgba(0,0,0,.32))
-    drop-shadow(0 0 5px rgba(194,154,86,.20)) !important;
-}
-
-.hd-floating-login-button img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: contain !important;
-}
-
-/* 小螢幕 */
-@media (max-width: 700px) {
-  .page {
-    width: 100% !important;
-    max-width: none !important;
-  }
-
-  .nezha-category-strip {
-    gap: 5px !important;
-    padding: 7px 8px 8px !important;
-  }
-
-  .nezha-category-item {
-    min-height: 32px !important;
-    font-size: 11px !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .hd-floating-login-button {
-    width: 78px !important;
-    height: 78px !important;
-    right: 6px !important;
-  }
-}
-
-
-/* ===== 修正：Header 在線 / 群組人數不要出現白底 ===== */
-.header-title-block,
-.header-stats-row,
-.header .header-stats-row,
-.header .online,
-.header .group-member-count {
-  background: transparent !important;
-  box-shadow: none !important;
-  border: 0 !important;
-}
-
-.header .header-stats-row {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  margin-top: 4px !important;
-  padding: 0 !important;
-}
-
-.header .online,
-.header .group-member-count {
-  color: #eadfce !important;
-  -webkit-text-fill-color: #eadfce !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-}
-
-.header .online {
-  padding-left: 11px !important;
-}
-
-.header .online::before {
-  background: #55c97a !important;
-}
-
-
-/* ===== Header 按鈕尺寸統一 ===== */
-.header-tools {
-  display: flex !important;
-  align-items: center !important;
-  gap: 7px !important;
-}
-
-.header-tools button,
-.header-tools .header-icon-btn,
-.header-tools .search-toggle-btn,
-.header-tools .mention-inbox-btn,
-.header-tools .mention-notify-btn,
-.header-tools .header-text-btn,
-.header-tools .change-nickname-btn,
-.header-tools .admin-button,
-.header-tools .team-activity-entry {
-  height: 40px !important;
-  min-height: 40px !important;
-  max-height: 40px !important;
-  border-radius: 10px !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  box-sizing: border-box !important;
-  line-height: 1 !important;
-}
-
-/* 圖示按鈕全部同寬 */
-.header-tools .header-icon-btn,
-.header-tools .search-toggle-btn,
-.header-tools .mention-inbox-btn,
-.header-tools .mention-notify-btn {
-  width: 40px !important;
-  min-width: 40px !important;
-  max-width: 40px !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-}
-
-/* 有文字的按鈕只維持相同高度，寬度依內容 */
-.header-tools .header-text-btn,
-.header-tools .change-nickname-btn,
-.header-tools .admin-button,
-.header-tools .team-activity-entry {
-  min-width: 68px !important;
-  padding-left: 12px !important;
-  padding-right: 12px !important;
-  white-space: nowrap !important;
-}
-
-@media (max-width: 700px) {
-  .header-tools {
-    gap: 6px !important;
-  }
-
-  .header-tools button,
-  .header-tools .header-icon-btn,
-  .header-tools .search-toggle-btn,
-  .header-tools .mention-inbox-btn,
-  .header-tools .mention-notify-btn,
-  .header-tools .header-text-btn,
-  .header-tools .change-nickname-btn,
-  .header-tools .admin-button,
-  .header-tools .team-activity-entry {
-    height: 38px !important;
-    min-height: 38px !important;
-    max-height: 38px !important;
-  }
-
-  .header-tools .header-icon-btn,
-  .header-tools .search-toggle-btn,
-  .header-tools .mention-inbox-btn,
-  .header-tools .mention-notify-btn {
-    width: 38px !important;
-    min-width: 38px !important;
-    max-width: 38px !important;
-  }
-}
-
-
-/* ===== 組隊按鈕加寬 ===== */
-#teamActivityButton {
-  width: 78px !important;
-  min-width: 78px !important;
-  max-width: 78px !important;
-  padding-left: 10px !important;
-  padding-right: 10px !important;
-  white-space: nowrap !important;
-}
-
-@media (max-width: 700px) {
-  #teamActivityButton {
-    width: 72px !important;
-    min-width: 72px !important;
-    max-width: 72px !important;
-  }
+.nz-theme-option[data-theme="obsidian"]
+.nz-swatch:nth-child(3) {
+  background: #c59b4e !important;
 }
