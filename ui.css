@@ -392,3 +392,39 @@ button.active,
     right: 6px !important;
   }
 }
+
+
+/* ===== 修正：Header 在線 / 群組人數不要出現白底 ===== */
+.header-title-block,
+.header-stats-row,
+.header .header-stats-row,
+.header .online,
+.header .group-member-count {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+.header .header-stats-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin-top: 4px !important;
+  padding: 0 !important;
+}
+
+.header .online,
+.header .group-member-count {
+  color: #eadfce !important;
+  -webkit-text-fill-color: #eadfce !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.header .online {
+  padding-left: 11px !important;
+}
+
+.header .online::before {
+  background: #55c97a !important;
+}
