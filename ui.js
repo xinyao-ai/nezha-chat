@@ -822,8 +822,338 @@
     );
   }
 
+
+  /* =====================================================
+     浮動球拖曳修正 V2
+     - 管理員模式也能拖
+     - 手機 / 電腦都支援
+     - 強制提高 z-index，避免被管理工具蓋住
+  ====================================================== */
+  function installFloatingBallDragFix() {
+    const button =
+      document.getElementById(
+        "hdFloatingLoginButton"
+      );
+
+    if (
+      !button ||
+      button.dataset.nezhaDragFixV2 === "1"
+    ) {
+      return;
+    }
+
+    button.dataset.nezhaDragFixV2 = "1";
+
+    button.style.position = "fixed";
+    button.style.zIndex = "2147483000";
+    button.style.pointerEvents = "auto";
+    button.style.touchAction = "none";
+    button.style.userSelect = "none";
+    button.style.webkitUserSelect = "none";
+    button.draggable = false;
+
+    const POSITION_KEY =
+      "hd888-floating-login-position-v1";
+
+    let drag = null;
+    let moved = false;
+    let blockClick = false;
+
+    function clamp(left, top) {
+      const rect =
+        button.getBoundingClientRect();
+
+      const width =
+        rect.width || 78;
+
+      const height =
+        rect.height || 78;
+
+      const margin = 6;
+
+      const maxLeft =
+        Math.max(
+          margin,
+          window.innerWidth -
+            width -
+            margin
+        );
+
+      const maxTop =
+        Math.max(
+          margin,
+          window.innerHeight -
+            height -
+            margin
+        );
+
+      return {
+        left:
+          Math.min(
+            maxLeft,
+            Math.max(
+              margin,
+              Number(left) || margin
+            )
+          ),
+        top:
+          Math.min(
+            maxTop,
+            Math.max(
+              margin,
+              Number(top) || margin
+            )
+          )
+      };
+    }
+
+    function apply(left, top) {
+      const next =
+        clamp(left, top);
+
+      button.style.left =
+        next.left + "px";
+
+      button.style.top =
+        next.top + "px";
+
+      button.style.right =
+        "auto";
+
+      button.style.bottom =
+        "auto";
+
+      return next;
+    }
+
+    function save() {
+      try {
+        const rect =
+          button.getBoundingClientRect();
+
+        localStorage.setItem(
+          POSITION_KEY,
+          JSON.stringify({
+            left: rect.left,
+            top: rect.top
+          })
+        );
+      } catch {}
+    }
+
+    function restore() {
+      try {
+        const saved =
+          JSON.parse(
+            localStorage.getItem(
+              POSITION_KEY
+            ) || "null"
+          );
+
+        if (
+          saved &&
+          Number.isFinite(
+            Number(saved.left)
+          ) &&
+          Number.isFinite(
+            Number(saved.top)
+          )
+        ) {
+          apply(
+            Number(saved.left),
+            Number(saved.top)
+          );
+        }
+      } catch {}
+    }
+
+    button.addEventListener(
+      "dragstart",
+      function(event) {
+        event.preventDefault();
+      },
+      true
+    );
+
+    button.addEventListener(
+      "pointerdown",
+      function(event) {
+        if (
+          event.pointerType === "mouse" &&
+          event.button !== 0
+        ) {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        const rect =
+          button.getBoundingClientRect();
+
+        drag = {
+          id: event.pointerId,
+          startX: event.clientX,
+          startY: event.clientY,
+          left: rect.left,
+          top: rect.top
+        };
+
+        moved = false;
+
+        button.classList.add(
+          "dragging"
+        );
+
+        try {
+          button.setPointerCapture(
+            event.pointerId
+          );
+        } catch {}
+      },
+      {
+        capture: true,
+        passive: false
+      }
+    );
+
+    window.addEventListener(
+      "pointermove",
+      function(event) {
+        if (
+          !drag ||
+          event.pointerId !== drag.id
+        ) {
+          return;
+        }
+
+        const dx =
+          event.clientX -
+          drag.startX;
+
+        const dy =
+          event.clientY -
+          drag.startY;
+
+        if (
+          !moved &&
+          Math.hypot(
+            dx,
+            dy
+          ) >= 4
+        ) {
+          moved = true;
+        }
+
+        if (!moved) {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        apply(
+          drag.left + dx,
+          drag.top + dy
+        );
+      },
+      {
+        capture: true,
+        passive: false
+      }
+    );
+
+    function finish(event) {
+      if (
+        !drag ||
+        (
+          event &&
+          event.pointerId !== drag.id
+        )
+      ) {
+        return;
+      }
+
+      if (moved) {
+        blockClick = true;
+        save();
+
+        setTimeout(
+          function() {
+            blockClick = false;
+          },
+          450
+        );
+      }
+
+      try {
+        button.releasePointerCapture(
+          drag.id
+        );
+      } catch {}
+
+      drag = null;
+      moved = false;
+
+      button.classList.remove(
+        "dragging"
+      );
+    }
+
+    window.addEventListener(
+      "pointerup",
+      finish,
+      {
+        capture: true
+      }
+    );
+
+    window.addEventListener(
+      "pointercancel",
+      finish,
+      {
+        capture: true
+      }
+    );
+
+    button.addEventListener(
+      "click",
+      function(event) {
+        if (!blockClick) {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        blockClick = false;
+      },
+      true
+    );
+
+    window.addEventListener(
+      "resize",
+      function() {
+        const rect =
+          button.getBoundingClientRect();
+
+        apply(
+          rect.left,
+          rect.top
+        );
+
+        save();
+      },
+      {
+        passive: true
+      }
+    );
+
+    restore();
+  }
+
   function init() {
     ensureThemeStyles();
+    installFloatingBallDragFix();
     installAdminToolsScrollFix();
     installThemeButtonObserver();
     applyTheme(safeGetTheme(), false);
