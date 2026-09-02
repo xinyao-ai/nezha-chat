@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#161515">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="hd888-build" content="nezha-ui-1">
+  <meta name="hd888-build" content="nezha-ui-auto-update-1">
 
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -1076,6 +1076,307 @@
 
     frame.src =
       buildWorkerFrameUrl();
+
+
+    /* =====================================================
+       👺 Pages / GitHub UI 自動更新
+       -----------------------------------------------------
+       - 偵測 index.html / ui.css / ui.js / LOGO / 浮動球
+       - 成員不用手動重新整理
+       - 頁面在前景時每 20 秒檢查一次
+       - 切回頁面時立即檢查
+       - 更新前先通知 iframe 暫存未送出的文字
+    ====================================================== */
+
+    const NEZHA_UI_WATCH_FILES = [
+      "/index.html",
+      "/ui.css",
+      "/ui.js",
+      "/logo.webp",
+      "/floating-ball.webp"
+    ];
+
+    const NEZHA_UI_WATCH_INTERVAL =
+      20 * 1000;
+
+    let nezhaUiWatchBaseline = "";
+    let nezhaUiWatchBusy = false;
+    let nezhaUiReloading = false;
+
+    function nezhaTinyHash(text) {
+      let hash = 2166136261;
+
+      for (
+        let i = 0;
+        i < text.length;
+        i += 1
+      ) {
+        hash ^= text.charCodeAt(i);
+        hash = Math.imul(
+          hash,
+          16777619
+        );
+      }
+
+      return (
+        hash >>> 0
+      ).toString(16);
+    }
+
+    async function nezhaResourceSignature(
+      path
+    ) {
+      const url =
+        path +
+        (
+          path.includes("?")
+            ? "&"
+            : "?"
+        ) +
+        "__nezha_watch=" +
+        Date.now();
+
+      try {
+        const response =
+          await fetch(
+            url,
+            {
+              method: "HEAD",
+              cache: "no-store",
+              headers: {
+                "Cache-Control":
+                  "no-cache"
+              }
+            }
+          );
+
+        if (response.ok) {
+          const etag =
+            response.headers.get(
+              "etag"
+            ) || "";
+
+          const modified =
+            response.headers.get(
+              "last-modified"
+            ) || "";
+
+          const length =
+            response.headers.get(
+              "content-length"
+            ) || "";
+
+          if (
+            etag ||
+            modified
+          ) {
+            return [
+              path,
+              etag,
+              modified,
+              length
+            ].join("|");
+          }
+        }
+      } catch {}
+
+      /*
+        少數環境 HEAD 沒有 ETag，
+        才退回 GET 做內容指紋。
+      */
+      const response =
+        await fetch(
+          url,
+          {
+            cache: "no-store",
+            headers: {
+              "Cache-Control":
+                "no-cache"
+            }
+          }
+        );
+
+      if (!response.ok) {
+        throw new Error(
+          "UI watch failed: " +
+          path
+        );
+      }
+
+      const buffer =
+        await response.arrayBuffer();
+
+      const bytes =
+        new Uint8Array(buffer);
+
+      let sample = "";
+
+      /*
+        不需要把二進位全部轉字串；
+        取長度 + 前後片段即可識別大多數更新。
+      */
+      const limit =
+        Math.min(
+          bytes.length,
+          4096
+        );
+
+      for (
+        let i = 0;
+        i < limit;
+        i += 1
+      ) {
+        sample +=
+          String.fromCharCode(
+            bytes[i]
+          );
+      }
+
+      const tailStart =
+        Math.max(
+          limit,
+          bytes.length - 4096
+        );
+
+      for (
+        let i = tailStart;
+        i < bytes.length;
+        i += 1
+      ) {
+        sample +=
+          String.fromCharCode(
+            bytes[i]
+          );
+      }
+
+      return (
+        path +
+        "|" +
+        bytes.length +
+        "|" +
+        nezhaTinyHash(sample)
+      );
+    }
+
+    async function checkNezhaUiUpdate(
+      reason = ""
+    ) {
+      if (
+        nezhaUiWatchBusy ||
+        nezhaUiReloading ||
+        document.hidden
+      ) {
+        return;
+      }
+
+      nezhaUiWatchBusy = true;
+
+      try {
+        const signatures =
+          await Promise.all(
+            NEZHA_UI_WATCH_FILES.map(
+              nezhaResourceSignature
+            )
+          );
+
+        const fingerprint =
+          signatures.join("||");
+
+        if (
+          !nezhaUiWatchBaseline
+        ) {
+          nezhaUiWatchBaseline =
+            fingerprint;
+
+          return;
+        }
+
+        if (
+          fingerprint ===
+          nezhaUiWatchBaseline
+        ) {
+          return;
+        }
+
+        nezhaUiReloading = true;
+
+        /*
+          先請 Worker iframe 把尚未送出的文字存起來，
+          再自動重載最新版。
+        */
+        try {
+          frame.contentWindow
+            ?.postMessage(
+              {
+                type:
+                  "nezha-save-draft-before-ui-update"
+              },
+              workerOrigin
+            );
+        } catch {}
+
+        setTimeout(
+          function() {
+            window.location.reload();
+          },
+          350
+        );
+
+      } catch {
+        /*
+          網路暫時斷線時不強制刷新，
+          下一輪再檢查。
+        */
+
+      } finally {
+        nezhaUiWatchBusy = false;
+      }
+    }
+
+    function startNezhaUiAutoUpdate() {
+      setTimeout(
+        function() {
+          checkNezhaUiUpdate(
+            "initial"
+          );
+        },
+        1800
+      );
+
+      setInterval(
+        function() {
+          if (!document.hidden) {
+            checkNezhaUiUpdate(
+              "interval"
+            );
+          }
+        },
+        NEZHA_UI_WATCH_INTERVAL
+      );
+
+      document.addEventListener(
+        "visibilitychange",
+        function() {
+          if (!document.hidden) {
+            checkNezhaUiUpdate(
+              "visible"
+            );
+          }
+        }
+      );
+
+      window.addEventListener(
+        "focus",
+        function() {
+          checkNezhaUiUpdate(
+            "focus"
+          );
+        }
+      );
+    }
+
+    startNezhaUiAutoUpdate();
+
 
     window.addEventListener(
       "load",
