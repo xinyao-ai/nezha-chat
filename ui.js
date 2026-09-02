@@ -1151,8 +1151,122 @@
     restore();
   }
 
+
+  /* =====================================================
+     ENTER 送出訊息修正
+     - 管理員端輸入訊息按 Enter 直接送出
+     - 中文輸入法組字中不誤送
+     - @ 提及選單開啟時，Enter 仍交給原本選單處理
+     - 避免原本事件失效或被其他管理員介面攔截
+  ====================================================== */
+  function installEnterToSendFix() {
+    if (window.__nezhaEnterToSendFixed) return;
+    window.__nezhaEnterToSendFixed = true;
+
+    function bind() {
+      const input =
+        document.getElementById(
+          "message"
+        );
+
+      if (
+        !input ||
+        input.dataset.enterSendFixed === "1"
+      ) {
+        return;
+      }
+
+      input.dataset.enterSendFixed = "1";
+
+      input.addEventListener(
+        "keydown",
+        function(event) {
+          if (
+            event.key !== "Enter" ||
+            event.shiftKey ||
+            event.ctrlKey ||
+            event.altKey ||
+            event.metaKey ||
+            event.isComposing ||
+            event.keyCode === 229
+          ) {
+            return;
+          }
+
+          const mentionBox =
+            document.getElementById(
+              "mentionSuggestions"
+            );
+
+          if (
+            mentionBox &&
+            mentionBox.classList.contains(
+              "show"
+            ) &&
+            mentionBox.children.length
+          ) {
+            /* @選單開著時，讓原本程式用 Enter 選人 */
+            return;
+          }
+
+          event.preventDefault();
+          event.stopImmediatePropagation();
+
+          const value =
+            String(
+              input.value || ""
+            ).trim();
+
+          if (!value) {
+            return;
+          }
+
+          /*
+            優先直接呼叫聊天室原本 sendMessage，
+            如果某些版本作用域不同，就改點「傳送」按鈕。
+          */
+          if (
+            typeof window.sendMessage ===
+            "function"
+          ) {
+            window.sendMessage();
+            return;
+          }
+
+          const sendButton =
+            document.getElementById(
+              "sendButton"
+            );
+
+          if (sendButton) {
+            sendButton.click();
+          }
+        },
+        {
+          capture: true
+        }
+      );
+    }
+
+    bind();
+
+    const observer =
+      new MutationObserver(
+        bind
+      );
+
+    observer.observe(
+      document.body,
+      {
+        childList: true,
+        subtree: true
+      }
+    );
+  }
+
   function init() {
     ensureThemeStyles();
+    installEnterToSendFix();
     installFloatingBallDragFix();
     installAdminToolsScrollFix();
     installThemeButtonObserver();
