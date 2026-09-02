@@ -541,8 +541,95 @@
     convertTeamButtonToTheme();
   }
 
+
+  /* =====================================================
+     管理員「管理工具」滑動修正
+     - 手機 / 電腦都可用滑鼠滾輪、觸控上下滑
+     - 不讓外層聊天室吃掉滑動事件
+  ====================================================== */
+  function installAdminToolsScrollFix() {
+    if (document.getElementById("nezhaAdminToolsScrollFix")) return;
+
+    const style = document.createElement("style");
+    style.id = "nezhaAdminToolsScrollFix";
+    style.textContent = `
+      #adminToolsPanel,
+      .admin-tools-panel {
+        min-height: 0 !important;
+      }
+
+      #adminToolsPanel.show,
+      .admin-tools-panel.show {
+        display: block !important;
+        max-height: min(58vh, 620px) !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        overscroll-behavior-y: contain !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
+        pointer-events: auto !important;
+        scrollbar-gutter: stable !important;
+      }
+
+      #adminToolsPanel.show * {
+        touch-action: auto;
+      }
+
+      #adminToolsPanel.show button,
+      #adminToolsPanel.show input,
+      #adminToolsPanel.show select,
+      #adminToolsPanel.show textarea {
+        touch-action: manipulation !important;
+      }
+
+      @media (max-width: 700px) {
+        #adminToolsPanel.show,
+        .admin-tools-panel.show {
+          max-height: 54vh !important;
+          padding-right: 8px !important;
+        }
+      }
+
+      @media (max-width: 420px) {
+        #adminToolsPanel.show,
+        .admin-tools-panel.show {
+          max-height: 50vh !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    function bindPanel(panel) {
+      if (!panel || panel.dataset.scrollFixBound === "1") return;
+
+      panel.dataset.scrollFixBound = "1";
+
+      ["wheel", "touchmove", "pointermove"].forEach(type => {
+        panel.addEventListener(
+          type,
+          event => {
+            event.stopPropagation();
+          },
+          { passive: true }
+        );
+      });
+    }
+
+    bindPanel(document.getElementById("adminToolsPanel"));
+
+    const observer = new MutationObserver(() => {
+      bindPanel(document.getElementById("adminToolsPanel"));
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
   function init() {
     ensureThemeStyles();
+    installAdminToolsScrollFix();
     applyTheme(safeGetTheme(), false);
     applyNezhaUi();
 
