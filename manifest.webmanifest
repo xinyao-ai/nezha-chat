@@ -1,0 +1,21 @@
+{
+  "name": "👺哪吒全能娛樂基地🚩",
+  "short_name": "哪吒娛樂基地",
+  "start_url": "/?room=nezha",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7f3eb",
+  "theme_color": "#161515",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+/index.html
+  Cache-Control: no-store
+
+/ui.css
+  Cache-Control: no-store
+
+/ui.js
+  Cache-Control: no-store
+
+/manifest.webmanifest
+  Cache-Control: no-cache

@@ -3,30 +3,1076 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+
   <title>👺哪吒全能娛樂基地🚩</title>
-  <meta name="theme-color" content="#0d0d0f">
+  <meta name="application-name" content="👺哪吒全能娛樂基地🚩">
+  <meta name="apple-mobile-web-app-title" content="👺哪吒全能娛樂基地🚩">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#161515">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="hd888-build" content="nezha-ui-1">
+
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+
   <style>
-    html,body{
-      margin:0;
-      width:100%;
-      height:100%;
-      overflow:hidden;
-      background:#0d0d0f;
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff}
+    iframe{display:block;width:100%;height:100%;border:0}
+
+    #pushEnableButton{
+      position:fixed;
+      right:14px;
+      bottom:132px;
+      z-index:99999;
+      display:none;
+      align-items:center;
+      gap:7px;
+      padding:12px 15px;
+      border:1px solid #b7893c;
+      border-radius:999px;
+      background:#181715;
+      color:#fff5df;
+      box-shadow:0 8px 24px rgba(0,0,0,.18);
+      font:700 14px/1.1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
     }
-    iframe{
-      display:block;
-      width:100%;
-      height:100%;
-      border:0;
-      background:#fff;
+
+    #pushEnableButton.show{
+      display:flex;
+    }
+
+    #pushEnableButton:disabled{
+      opacity:.58;
+      cursor:default;
+    }
+
+    @media (max-width:520px){
+      #pushEnableButton{
+        right:10px;
+        bottom:128px;
+        padding:11px 13px;
+        font-size:13px;
+      }
     }
   </style>
 </head>
 <body>
+  <button
+    id="pushEnableButton"
+    type="button"
+  >🔔 開啟通知</button>
+
   <iframe
-    src="https://nezha-entertainment-chat.love06130430.workers.dev/?room=nezha"
+    id="chatFrame"
     title="👺哪吒全能娛樂基地🚩"
-    allow="clipboard-read; clipboard-write"
   ></iframe>
+
+  <script>
+    const workerUrl =
+      "https://nezha-entertainment-chat.love06130430.workers.dev";
+
+    const workerOrigin =
+      new URL(workerUrl).origin;
+
+    const frame =
+      document.getElementById(
+        "chatFrame"
+      );
+
+    const pushEnableButton =
+      document.getElementById(
+        "pushEnableButton"
+      );
+
+    let vapidPublicKeyCache = "";
+
+    async function getVapidPublicKey() {
+      if (vapidPublicKeyCache) {
+        return vapidPublicKeyCache;
+      }
+
+      const response =
+        await fetch(
+          workerUrl +
+          "/api/push/public-key",
+          {
+            cache: "no-store"
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (
+        !response.ok ||
+        !data.ok ||
+        !data.publicKey
+      ) {
+        throw new Error(
+          data.message ||
+          "讀取推播金鑰失敗"
+        );
+      }
+
+      vapidPublicKeyCache =
+        String(
+          data.publicKey
+        ).trim();
+
+      return vapidPublicKeyCache;
+    }
+
+    let deferredInstallPrompt =
+      null;
+
+    const isStandalone =
+      window.matchMedia(
+        "(display-mode: standalone)"
+      ).matches ||
+      window.navigator.standalone ===
+        true;
+
+    const userAgent =
+      navigator.userAgent || "";
+
+    const isIOS =
+      /iPad|iPhone|iPod/i.test(
+        userAgent
+      );
+
+    const isAndroid =
+      /Android/i.test(
+        userAgent
+      );
+
+    const isInAppBrowser =
+      /Line\//i.test(userAgent) ||
+      /FBAN|FBAV|FB_IAB/i.test(userAgent) ||
+      /Instagram/i.test(userAgent) ||
+      /MicroMessenger/i.test(userAgent) ||
+      /TikTok|musical_ly|BytedanceWebview/i.test(userAgent) ||
+      /GSA\//i.test(userAgent) ||
+      (
+        isAndroid &&
+        (
+          /;\s*wv\)/i.test(userAgent) ||
+          /\bwv\b/i.test(userAgent) ||
+          (
+            /Version\/4\.0/i.test(userAgent) &&
+            /Chrome\//i.test(userAgent)
+          )
+        )
+      );
+
+    const isChromeAndroid =
+      isAndroid &&
+      /Chrome\//i.test(userAgent) &&
+      !/EdgA|OPR|SamsungBrowser/i.test(
+        userAgent
+      ) &&
+      !isInAppBrowser;
+
+    let installPromptWaiters =
+      [];
+
+    function notifyInstallPromptReady() {
+      const waiters =
+        installPromptWaiters.slice();
+
+      installPromptWaiters =
+        [];
+
+      for (
+        const resolve
+        of waiters
+      ) {
+        try {
+          resolve(
+            deferredInstallPrompt
+          );
+        } catch {}
+      }
+    }
+
+    function waitForInstallPrompt(
+      timeoutMs = 1800
+    ) {
+      if (deferredInstallPrompt) {
+        return Promise.resolve(
+          deferredInstallPrompt
+        );
+      }
+
+      return new Promise(
+        function(resolve) {
+          let finished =
+            false;
+
+          const done =
+            function(value) {
+              if (finished) {
+                return;
+              }
+
+              finished =
+                true;
+
+              resolve(value);
+            };
+
+          installPromptWaiters.push(
+            done
+          );
+
+          setTimeout(
+            function() {
+              done(
+                deferredInstallPrompt
+              );
+            },
+            timeoutMs
+          );
+        }
+      );
+    }
+
+    window.addEventListener(
+      "beforeinstallprompt",
+      function(event) {
+        event.preventDefault();
+
+        deferredInstallPrompt =
+          event;
+
+        notifyInstallPromptReady();
+      }
+    );
+
+    window.addEventListener(
+      "appinstalled",
+      function() {
+        deferredInstallPrompt =
+          null;
+
+        try {
+          frame.contentWindow.postMessage(
+            {
+              type:
+                "hd888-install-result",
+              status:
+                "installed"
+            },
+            workerOrigin
+          );
+        } catch {}
+      }
+    );
+
+    if (
+      "serviceWorker" in navigator
+    ) {
+      window.addEventListener(
+        "load",
+        function() {
+          navigator.serviceWorker
+            .register(
+              "/sw.js",
+              {
+                scope: "/"
+              }
+            )
+            .catch(
+              function() {}
+            );
+        }
+      );
+    }
+
+    const params =
+      new URLSearchParams(
+        window.location.search
+      );
+
+    const room =
+      String(
+        params.get("room") ||
+        "nezha"
+      )
+        .replace(
+          /[^a-zA-Z0-9_-]/g,
+          ""
+        )
+        .slice(0, 40) ||
+      "nezha";
+
+    /*
+      ㉝ iPhone Safari 第一方登入狀態保存
+      workers.dev iframe 的 Storage 不可靠時，
+      用 nezha-chat.pages.dev 自己的 localStorage 保底。
+    */
+
+    const visitorKey =
+      "hd888FirstPartyVisitorId";
+
+    const memberNameKey =
+      "hd888FirstPartyMemberName:" +
+      room;
+
+    const memberGrantKey =
+      "hd888FirstPartyMemberGrant:" +
+      room;
+
+    function safeGet(key) {
+      try {
+        return (
+          localStorage.getItem(key) ||
+          ""
+        );
+      } catch {
+        return "";
+      }
+    }
+
+    function safeSet(
+      key,
+      value
+    ) {
+      try {
+        const clean =
+          String(
+            value ?? ""
+          );
+
+        if (clean) {
+          localStorage.setItem(
+            key,
+            clean
+          );
+        }
+      } catch {}
+    }
+
+    function safeRemove(key) {
+      try {
+        localStorage.removeItem(
+          key
+        );
+      } catch {}
+    }
+
+    async function runDeferredInstallPrompt() {
+      if (!deferredInstallPrompt) {
+        return false;
+      }
+
+      const prompt =
+        deferredInstallPrompt;
+
+      deferredInstallPrompt =
+        null;
+
+      try {
+        await prompt.prompt();
+
+        const choice =
+          await prompt.userChoice;
+
+        const accepted =
+          choice &&
+          choice.outcome ===
+            "accepted";
+
+        frame.contentWindow.postMessage(
+          {
+            type:
+              "hd888-install-result",
+            status:
+              accepted
+                ? "installed"
+                : "dismissed"
+          },
+          workerOrigin
+        );
+
+        return true;
+
+      } catch {
+        return false;
+      }
+    }
+
+    function urlBase64ToUint8Array(
+      base64String
+    ) {
+      const padding =
+        "=".repeat(
+          (4 - base64String.length % 4) % 4
+        );
+
+      const base64 =
+        (
+          base64String +
+          padding
+        )
+          .replace(/-/g, "+")
+          .replace(/_/g, "/");
+
+      const rawData =
+        atob(base64);
+
+      const output =
+        new Uint8Array(
+          rawData.length
+        );
+
+      for (
+        let i = 0;
+        i < rawData.length;
+        i++
+      ) {
+        output[i] =
+          rawData.charCodeAt(i);
+      }
+
+      return output;
+    }
+
+    async function getPushRegistration() {
+      if (
+        !("serviceWorker" in navigator)
+      ) {
+        throw new Error(
+          "這個瀏覽器不支援通知"
+        );
+      }
+
+      const registration =
+        await navigator.serviceWorker.ready;
+
+      if (
+        !registration.pushManager
+      ) {
+        throw new Error(
+          "這個瀏覽器不支援 Web Push"
+        );
+      }
+
+      return registration;
+    }
+
+    async function getPushStatus() {
+      const supported =
+        "Notification" in window &&
+        "serviceWorker" in navigator &&
+        "PushManager" in window;
+
+      if (!supported) {
+        return {
+          supported: false,
+          permission: "unsupported",
+          subscribed: false
+        };
+      }
+
+      let subscribed = false;
+
+      try {
+        const registration =
+          await getPushRegistration();
+
+        const subscription =
+          await registration.pushManager
+            .getSubscription();
+
+        subscribed =
+          !!subscription;
+      } catch {}
+
+      return {
+        supported: true,
+        permission:
+          Notification.permission,
+        subscribed
+      };
+    }
+
+    async function sendPushSubscriptionToChat(
+      subscription
+    ) {
+      const visitorId =
+        safeGet(
+          visitorKey
+        );
+
+      const name =
+        safeGet(
+          memberNameKey
+        );
+
+      const joinGrant =
+        safeGet(
+          memberGrantKey
+        );
+
+      if (
+        !visitorId ||
+        !joinGrant
+      ) {
+        throw new Error(
+          "請先進入聊天室後再開啟通知"
+        );
+      }
+
+      const response =
+        await fetch(
+          workerUrl +
+          "/api/push/subscribe",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+            body:
+              JSON.stringify({
+                room,
+                visitorId,
+                name,
+                joinGrant,
+                subscription:
+                  subscription
+                    ? subscription.toJSON()
+                    : null
+              })
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (
+        !response.ok ||
+        !data.ok
+      ) {
+        throw new Error(
+          data.message ||
+          "保存通知訂閱失敗"
+        );
+      }
+
+      return true;
+    }
+
+    async function subscribeToPush() {
+      const supported =
+        "Notification" in window &&
+        "serviceWorker" in navigator &&
+        "PushManager" in window;
+
+      if (!supported) {
+        alert(
+          "這支手機目前不支援網頁推播通知"
+        );
+        return;
+      }
+
+      /*
+        iPhone Web Push 必須從「加入主畫面」後的 Web App 開啟。
+      */
+      if (
+        isIOS &&
+        !isStandalone
+      ) {
+        alert(
+          "iPhone 請先把聊天室加入主畫面，再從桌面圖示開啟後設定通知。"
+        );
+        return;
+      }
+
+      if (
+        Notification.permission ===
+          "denied"
+      ) {
+        alert(
+          "通知權限目前是關閉的，請到手機的網站／App 通知設定重新允許。"
+        );
+        return;
+      }
+
+      pushEnableButton.disabled =
+        true;
+
+      pushEnableButton.textContent =
+        "🔔 設定中…";
+
+      try {
+        let permission =
+          Notification.permission;
+
+        if (
+          permission !== "granted"
+        ) {
+          permission =
+            await Notification
+              .requestPermission();
+        }
+
+        if (
+          permission !== "granted"
+        ) {
+          pushEnableButton.textContent =
+            "🔔 開啟通知";
+
+          return;
+        }
+
+        const registration =
+          await getPushRegistration();
+
+        let subscription =
+          await registration.pushManager
+            .getSubscription();
+
+        if (!subscription) {
+          const vapidPublicKey =
+            await getVapidPublicKey();
+
+          subscription =
+            await registration.pushManager
+              .subscribe({
+                userVisibleOnly: true,
+                applicationServerKey:
+                  urlBase64ToUint8Array(
+                    vapidPublicKey
+                  )
+              });
+        }
+
+        await sendPushSubscriptionToChat(
+          subscription
+        );
+
+        pushEnableButton.textContent =
+          "✅ 通知已開啟";
+
+        setTimeout(
+          function() {
+            pushEnableButton.classList
+              .remove("show");
+          },
+          1400
+        );
+
+      } catch (error) {
+        console.error(
+          "HD888 push subscribe failed",
+          error
+        );
+
+        alert(
+          "通知設定失敗，請稍後再試。"
+        );
+
+        pushEnableButton.textContent =
+          "🔔 開啟通知";
+
+      } finally {
+        pushEnableButton.disabled =
+          false;
+      }
+    }
+
+    async function refreshPushButton() {
+      /*
+        沒登入、APP 內建瀏覽器、iPhone 尚未加入主畫面，
+        都先不顯示通知按鈕。
+      */
+      const hasMemberSession =
+        !!safeGet(
+          memberGrantKey
+        );
+
+      if (
+        !hasMemberSession ||
+        isInAppBrowser ||
+        (
+          isIOS &&
+          !isStandalone
+        )
+      ) {
+        pushEnableButton.classList
+          .remove("show");
+
+        return;
+      }
+
+      const status =
+        await getPushStatus();
+
+      if (
+        !status.supported ||
+        status.permission === "denied" ||
+        status.subscribed
+      ) {
+        pushEnableButton.classList
+          .remove("show");
+
+        return;
+      }
+
+      pushEnableButton.textContent =
+        "🔔 開啟通知";
+
+      pushEnableButton.classList
+        .add("show");
+    }
+
+    pushEnableButton.addEventListener(
+      "click",
+      subscribeToPush
+    );
+
+    window.addEventListener(
+      "focus",
+      function() {
+        refreshPushButton();
+      }
+    );
+
+    document.addEventListener(
+      "visibilitychange",
+      function() {
+        if (!document.hidden) {
+          refreshPushButton();
+        }
+      }
+    );
+
+    window.addEventListener(
+      "message",
+      function(event) {
+        if (
+          event.origin !==
+            workerOrigin ||
+          event.source !==
+            frame.contentWindow
+        ) {
+          return;
+        }
+
+        const data =
+          event.data || {};
+
+        if (
+          data.type ===
+            "hd888-install-request"
+        ) {
+          if (isStandalone) {
+            frame.contentWindow.postMessage(
+              {
+                type:
+                  "hd888-install-result",
+                status:
+                  "installed"
+              },
+              workerOrigin
+            );
+
+            return;
+          }
+
+          /*
+            APP 內建瀏覽器先停止嘗試安裝，
+            直接叫使用者改用 Safari / Chrome。
+          */
+          if (isInAppBrowser) {
+            frame.contentWindow.postMessage(
+              {
+                type:
+                  "hd888-install-result",
+                status:
+                  isIOS
+                    ? "ios-inapp"
+                    : "android-inapp"
+              },
+              workerOrigin
+            );
+
+            return;
+          }
+
+          /*
+            Android 正式 Chrome：
+            優先使用 beforeinstallprompt 原生安裝視窗。
+            若事件剛好還沒 ready，短暫等候一次。
+          */
+          if (isChromeAndroid) {
+            (
+              async function() {
+                if (
+                  !deferredInstallPrompt
+                ) {
+                  await waitForInstallPrompt(
+                    1800
+                  );
+                }
+
+                const shown =
+                  await runDeferredInstallPrompt();
+
+                if (!shown) {
+                  frame.contentWindow.postMessage(
+                    {
+                      type:
+                        "hd888-install-result",
+                      status:
+                        "android-guide"
+                    },
+                    workerOrigin
+                  );
+                }
+              }
+            )();
+
+            return;
+          }
+
+          /*
+            其他支援 beforeinstallprompt 的瀏覽器也先用原生安裝。
+          */
+          if (deferredInstallPrompt) {
+            runDeferredInstallPrompt();
+
+            return;
+          }
+
+          frame.contentWindow.postMessage(
+            {
+              type:
+                "hd888-install-result",
+              status:
+                isIOS
+                  ? "ios-guide"
+                  : "android-guide"
+            },
+            workerOrigin
+          );
+
+          return;
+        }
+
+        if (
+          data.type ===
+            "hd888-push-status-request"
+        ) {
+          (
+            async function() {
+              const status =
+                await getPushStatus();
+
+              frame.contentWindow.postMessage(
+                {
+                  type:
+                    "hd888-push-status",
+                  ...status
+                },
+                workerOrigin
+              );
+            }
+          )();
+
+          return;
+        }
+
+        if (
+          data.type ===
+            "hd888-push-subscribe-request"
+        ) {
+          /*
+            iframe 只能請求顯示按鈕。
+            真正 Notification.requestPermission()
+            必須由使用者直接點 Pages 外層按鈕，
+            才能符合瀏覽器的 user gesture 規則。
+          */
+          refreshPushButton();
+
+          pushEnableButton.classList
+            .add("show");
+
+          return;
+        }
+
+        if (
+          data.type ===
+            "hd888-session-get"
+        ) {
+          frame.contentWindow.postMessage(
+            {
+              type:
+                "hd888-session-state",
+
+              requestId:
+                String(
+                  data.requestId ||
+                  ""
+                ),
+
+              visitorId:
+                safeGet(
+                  visitorKey
+                ),
+
+              name:
+                safeGet(
+                  memberNameKey
+                ),
+
+              grant:
+                safeGet(
+                  memberGrantKey
+                )
+            },
+            workerOrigin
+          );
+
+          return;
+        }
+
+        if (
+          data.type ===
+            "hd888-session-save"
+        ) {
+          safeSet(
+            visitorKey,
+            String(
+              data.visitorId ||
+              ""
+            ).slice(0, 100)
+          );
+
+          safeSet(
+            memberNameKey,
+            String(
+              data.name ||
+              ""
+            )
+              .trim()
+              .slice(0, 20)
+          );
+
+          safeSet(
+            memberGrantKey,
+            String(
+              data.grant ||
+              ""
+            )
+              .trim()
+              .slice(0, 4096)
+          );
+
+          refreshPushButton();
+
+          return;
+        }
+
+        if (
+          data.type ===
+            "hd888-session-clear-grant"
+        ) {
+          safeRemove(
+            memberGrantKey
+          );
+
+          return;
+        }
+
+        if (
+          data.type ===
+            "hd888-session-clear"
+        ) {
+          /*
+            visitorId 故意不刪。
+            同一支手機維持同一裝置識別比較穩。
+          */
+          safeRemove(
+            memberNameKey
+          );
+
+          safeRemove(
+            memberGrantKey
+          );
+        }
+      }
+    );
+
+    function buildWorkerFrameUrl() {
+      const resume =
+        new URLSearchParams();
+
+      const savedVisitor =
+        safeGet(
+          visitorKey
+        );
+
+      const savedName =
+        safeGet(
+          memberNameKey
+        );
+
+      const savedGrant =
+        safeGet(
+          memberGrantKey
+        );
+
+      if (savedVisitor) {
+        resume.set(
+          "hd888Visitor",
+          savedVisitor
+        );
+      }
+
+      if (savedName) {
+        resume.set(
+          "hd888Name",
+          savedName
+        );
+      }
+
+      if (savedGrant) {
+        resume.set(
+          "hd888Grant",
+          savedGrant
+        );
+      }
+
+      const resumeHash =
+        resume.toString();
+
+      const workerParams = new URLSearchParams(window.location.search);\n      workerParams.set("room", room);\n\n      return (\n        workerUrl +\n        "/?" +\n        workerParams.toString() +
+        (
+          resumeHash
+            ? "#" + resumeHash
+            : ""
+        )
+      );
+    }
+
+    frame.src =
+      buildWorkerFrameUrl();
+
+    window.addEventListener(
+      "load",
+      function() {
+        setTimeout(
+          refreshPushButton,
+          900
+        );
+      }
+    );
+  </script>
 </body>
 </html>

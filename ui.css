@@ -1,0 +1,261 @@
+
+/* 👺哪吒全能娛樂基地｜GitHub 管理的視覺層
+   後續改顏色、排版、按鈕、字體，優先改這個檔案。 */
+
+:root {
+  --nz-obsidian: #161515;
+  --nz-obsidian-2: #23201e;
+  --nz-gold: #c9a15a;
+  --nz-gold-soft: #e8d5aa;
+  --nz-ivory: #f7f3eb;
+  --nz-ivory-2: #fffdf8;
+  --nz-wine: #7f2638;
+  --nz-wine-2: #641c2b;
+  --nz-text: #292522;
+  --nz-muted: #756e67;
+  --nz-line: #ddd3c2;
+}
+
+html, body {
+  background:
+    radial-gradient(circle at 10% 12%, rgba(127,38,56,.08), transparent 30%),
+    radial-gradient(circle at 90% 90%, rgba(201,161,90,.10), transparent 28%),
+    #e9e4db !important;
+  color: var(--nz-text) !important;
+}
+
+.page {
+  width: min(100%, 880px) !important;
+  max-width: 880px !important;
+  background: var(--nz-ivory) !important;
+  border-left: 1px solid #d5c8b3 !important;
+  border-right: 1px solid #d5c8b3 !important;
+  box-shadow: 0 0 38px rgba(33,28,24,.10) !important;
+}
+
+/* 登入頁 */
+.join {
+  background:
+    linear-gradient(180deg, #ece7df 0%, #f7f3eb 38%, #f7f3eb 100%) !important;
+  color: var(--nz-text) !important;
+}
+
+.join form {
+  background: var(--nz-ivory-2) !important;
+  border: 1px solid #d9ccb7 !important;
+  box-shadow: 0 16px 36px rgba(36,31,27,.11) !important;
+}
+
+.logo {
+  background: #fff !important;
+  border-color: var(--nz-gold) !important;
+  box-shadow: 0 0 0 5px rgba(201,161,90,.08), 0 10px 25px rgba(39,32,27,.13) !important;
+}
+
+.logo img,
+.header-brand-mark img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+.join h1 {
+  color: #201d1b !important;
+  text-shadow: none !important;
+  font-weight: 900 !important;
+}
+
+.join p,
+.join-install-hint {
+  color: #746d66 !important;
+}
+
+/* 暱稱輸入一定看得到 */
+.join input,
+#nickname,
+.admin-join-login-input {
+  background: #fff !important;
+  color: #231f1d !important;
+  -webkit-text-fill-color: #231f1d !important;
+  caret-color: var(--nz-wine) !important;
+  border: 1px solid #cdbd9f !important;
+  font-weight: 700 !important;
+}
+
+.join input::placeholder,
+#nickname::placeholder,
+.admin-join-login-input::placeholder {
+  color: #9a9188 !important;
+  -webkit-text-fill-color: #9a9188 !important;
+  opacity: 1 !important;
+}
+
+.join-install-button {
+  background: #f7f0e4 !important;
+  color: #5d4827 !important;
+  border: 1px solid #d2b26f !important;
+}
+
+#joinButton,
+.join button[type="submit"],
+.admin-join-submit {
+  background: linear-gradient(180deg, #8b2d42, #6d2032) !important;
+  color: #fff8ee !important;
+  border: 1px solid #5c1828 !important;
+}
+
+/* 聊天室 */
+.header {
+  background: linear-gradient(135deg, #171515 0%, #211e1c 68%, #2a221a 100%) !important;
+  border-bottom: 1px solid #a88449 !important;
+  box-shadow: 0 4px 14px rgba(25,20,17,.16) !important;
+}
+
+.header .title,
+#roomTitleText {
+  color: #f4dfad !important;
+  text-shadow: none !important;
+}
+
+.header .online,
+.header .group-member-count,
+.online {
+  color: #e8e0d4 !important;
+}
+
+.header-icon-btn,
+.header .search-toggle-btn,
+.header .mention-inbox-btn,
+.header .mention-notify-btn {
+  background: #7f2638 !important;
+  color: #fff9f0 !important;
+  border: 1px solid #a84b61 !important;
+  box-shadow: none !important;
+}
+
+.header-text-btn,
+.header .change-nickname-btn,
+.header .admin-button,
+.team-activity-entry {
+  background: #201d1b !important;
+  color: #efd59a !important;
+  border: 1px solid #a37f45 !important;
+  box-shadow: none !important;
+}
+
+/* 四大分類 */
+.nezha-category-strip {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0,1fr)) !important;
+  gap: 7px !important;
+  padding: 8px 12px 9px !important;
+  background: #eee8de !important;
+  border-bottom: 1px solid #cfbea2 !important;
+}
+
+.nezha-category-item {
+  min-height: 34px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  background: #fffaf1 !important;
+  color: #4b3b2b !important;
+  border: 1px solid #c8a562 !important;
+  border-radius: 10px !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+}
+
+/* 聊天區 */
+.chat,
+.messages,
+.messages-wrap,
+.message-list,
+#messages {
+  background:
+    linear-gradient(rgba(250,248,244,.96), rgba(247,243,236,.98)),
+    radial-gradient(circle at 50% 0%, rgba(201,161,90,.06), transparent 38%) !important;
+}
+
+.composer,
+.input-bar,
+.chat-input-wrap,
+.bottom {
+  background: #fffdf8 !important;
+  border-top-color: #d9cebd !important;
+}
+
+/* 聊天輸入文字一定看得到 */
+.bottom input[type="text"],
+#message,
+.composer input[type="text"] {
+  background: #fff !important;
+  color: #231f1d !important;
+  -webkit-text-fill-color: #231f1d !important;
+  caret-color: var(--nz-wine) !important;
+  border: 1px solid #cfc4b5 !important;
+  font-weight: 600 !important;
+}
+
+.bottom input[type="text"]::placeholder,
+#message::placeholder,
+.composer input[type="text"]::placeholder {
+  color: #9b938b !important;
+  -webkit-text-fill-color: #9b938b !important;
+  opacity: 1 !important;
+}
+
+.image-btn {
+  background: #201d1b !important;
+  color: #f0d69b !important;
+  border: 1px solid #aa8649 !important;
+}
+
+.send-btn {
+  background: linear-gradient(180deg, #8b2d42, #6d2032) !important;
+  color: #fff !important;
+  border: 1px solid #5d1a2a !important;
+}
+
+/* 右側浮動球 */
+.hd-floating-login-button {
+  width: 92px !important;
+  height: 92px !important;
+  right: 10px !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  filter:
+    drop-shadow(0 5px 8px rgba(0,0,0,.42))
+    drop-shadow(0 0 5px rgba(237,174,55,.22)) !important;
+}
+
+.hd-floating-login-button img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
+.system, .empty {
+  color: #81786f !important;
+}
+
+.turnstile-status {
+  color: #337446 !important;
+  font-weight: 800 !important;
+}
+
+@media (max-width: 700px) {
+  .page { width: 100% !important; max-width: none !important; }
+  .nezha-category-strip { gap: 5px !important; padding: 7px 8px 8px !important; }
+  .nezha-category-item { min-height: 32px !important; font-size: 11px !important; }
+}
+
+@media (max-width: 480px) {
+  .hd-floating-login-button {
+    width: 78px !important;
+    height: 78px !important;
+    right: 6px !important;
+  }
+}
