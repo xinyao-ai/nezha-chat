@@ -1124,7 +1124,44 @@
       } catch {}
     }
 
+    function applyDefaultPosition() {
+      const rect =
+        button.getBoundingClientRect();
+
+      const width =
+        rect.width || 78;
+
+      const height =
+        rect.height || 78;
+
+      /*
+        新加入聊天室的預設位置：
+        右側中下方，像你圖二框起來的位置。
+        不會再卡在左上角擋標題。
+      */
+      const defaultLeft =
+        window.innerWidth -
+        width -
+        12;
+
+      const defaultTop =
+        (
+          window.innerHeight *
+          0.58
+        ) -
+        (
+          height / 2
+        );
+
+      apply(
+        defaultLeft,
+        defaultTop
+      );
+    }
+
     function restore() {
+      let restored = false;
+
       try {
         const saved =
           JSON.parse(
@@ -1146,8 +1183,19 @@
             Number(saved.left),
             Number(saved.top)
           );
+
+          restored = true;
         }
       } catch {}
+
+      /*
+        第一次加入、從沒拖過的人：
+        直接放到右側中下方。
+        已經自己拖過的人仍保留自己的位置。
+      */
+      if (!restored) {
+        applyDefaultPosition();
+      }
     }
 
     button.addEventListener(
