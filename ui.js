@@ -195,6 +195,36 @@
         color: inherit !important;
       }
 
+
+      .nezha-admin-settings-button {
+        width: 88px !important;
+        min-width: 88px !important;
+        max-width: 88px !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        padding: 0 8px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 4px !important;
+        white-space: nowrap !important;
+        border-radius: 10px !important;
+        font-size: 12px !important;
+        font-weight: 900 !important;
+      }
+
+      @media (max-width: 700px) {
+        .nezha-admin-settings-button {
+          width: 82px !important;
+          min-width: 82px !important;
+          max-width: 82px !important;
+          height: 38px !important;
+          min-height: 38px !important;
+          padding: 0 6px !important;
+          font-size: 11px !important;
+        }
+      }
+
       .nezha-category-link,
       .nezha-category-coming {
         appearance: none !important;
@@ -622,6 +652,136 @@
   }
 
 
+
+  /* =====================================================
+     管理設定按鈕
+     - 放在右上「官方管理員」後面
+     - 點它才開啟 Cloudflare Worker 的管理後台
+     - 「官方管理員」只當身分顯示，不再拿來開後台
+  ====================================================== */
+  function ensureAdminSettingsButton() {
+    const badge =
+      document.getElementById(
+        "adminBadge"
+      );
+
+    const body =
+      document.body;
+
+    const isAdmin =
+      body.classList.contains(
+        "admin-mode"
+      ) ||
+      !!document.querySelector(
+        "#adminPanel, #adminToolsToggle"
+      );
+
+    let button =
+      document.getElementById(
+        "nezhaAdminSettingsButton"
+      );
+
+    if (!isAdmin || !badge) {
+      if (button) {
+        button.remove();
+      }
+
+      return;
+    }
+
+    const tools =
+      badge.parentElement;
+
+    if (!tools) return;
+
+    /*
+      官方管理員只保留成「身分標示」。
+      真正開啟管理後台改由新的「管理設定」按鈕負責。
+    */
+    badge.style.setProperty(
+      "cursor",
+      "default",
+      "important"
+    );
+
+    badge.style.setProperty(
+      "pointer-events",
+      "none",
+      "important"
+    );
+
+    badge.title =
+      "目前為官方管理員";
+
+    if (!button) {
+      button =
+        document.createElement(
+          "button"
+        );
+
+      button.id =
+        "nezhaAdminSettingsButton";
+
+      button.type =
+        "button";
+
+      button.className =
+        "header-text-btn nezha-admin-settings-button";
+
+      button.innerHTML =
+        "⚙️ <span>管理設定</span>";
+
+      button.setAttribute(
+        "aria-label",
+        "開啟管理設定"
+      );
+
+      badge.insertAdjacentElement(
+        "afterend",
+        button
+      );
+    }
+
+    if (
+      button.dataset.bound !==
+      "1"
+    ) {
+      button.dataset.bound =
+        "1";
+
+      button.addEventListener(
+        "click",
+        function(event) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          /*
+            優先直接呼叫 Worker 目前使用的 Drawer。
+          */
+          if (
+            typeof window.openAdminPanelDrawer ===
+            "function"
+          ) {
+            window.openAdminPanelDrawer();
+            return;
+          }
+
+          /*
+            保險：若函式名稱之後改變，
+            仍可用程式方式觸發原本官方管理員 badge。
+            pointer-events:none 只影響真人點擊，不影響 .click()。
+          */
+          if (
+            typeof badge.click ===
+            "function"
+          ) {
+            badge.click();
+          }
+        }
+      );
+    }
+  }
+
   function ensureCategoryLinks() {
     const header =
       document.querySelector(".header");
@@ -798,6 +958,7 @@
 
     convertTeamButtonToTheme();
     ensureAdminThemeButton();
+    ensureAdminSettingsButton();
   }
 
 
@@ -817,6 +978,7 @@
         ensureCategoryLinks();
         convertTeamButtonToTheme();
         ensureAdminThemeButton();
+        ensureAdminSettingsButton();
       });
     };
 
