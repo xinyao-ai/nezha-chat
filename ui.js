@@ -196,6 +196,14 @@
       }
 
 
+
+      body.admin-mode .hd-floating-login-button,
+      body.admin-mode #hdFloatingLoginButton {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+
       .nezha-admin-settings-button {
         width: 88px !important;
         min-width: 88px !important;
@@ -659,6 +667,67 @@
      - 點它才開啟 Cloudflare Worker 的管理後台
      - 「官方管理員」只當身分顯示，不再拿來開後台
   ====================================================== */
+
+  /* =====================================================
+     管理員端隱藏浮動球
+     - /admin 管理員頁完全不顯示
+     - 一般客戶端仍保留浮動球與拖曳功能
+  ====================================================== */
+  function hideFloatingBallOnAdmin() {
+    const isAdmin =
+      window.location.pathname.includes(
+        "/admin"
+      ) ||
+      document.body.classList.contains(
+        "admin-mode"
+      ) ||
+      !!document.getElementById(
+        "adminPanel"
+      );
+
+    const button =
+      document.getElementById(
+        "hdFloatingLoginButton"
+      ) ||
+      document.querySelector(
+        ".hd-floating-login-button"
+      );
+
+    if (!button) return;
+
+    if (isAdmin) {
+      button.style.setProperty(
+        "display",
+        "none",
+        "important"
+      );
+
+      button.style.setProperty(
+        "visibility",
+        "hidden",
+        "important"
+      );
+
+      button.style.setProperty(
+        "pointer-events",
+        "none",
+        "important"
+      );
+    } else {
+      button.style.removeProperty(
+        "display"
+      );
+
+      button.style.removeProperty(
+        "visibility"
+      );
+
+      button.style.removeProperty(
+        "pointer-events"
+      );
+    }
+  }
+
   function ensureAdminSettingsButton() {
     const badge =
       document.getElementById(
@@ -959,6 +1028,7 @@
     convertTeamButtonToTheme();
     ensureAdminThemeButton();
     ensureAdminSettingsButton();
+    hideFloatingBallOnAdmin();
   }
 
 
@@ -979,6 +1049,7 @@
         convertTeamButtonToTheme();
         ensureAdminThemeButton();
         ensureAdminSettingsButton();
+        hideFloatingBallOnAdmin();
       });
     };
 
