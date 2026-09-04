@@ -2,6 +2,61 @@
   const ASSET_BASE = "https://nezha-chat.pages.dev";
   const THEME_KEY = "nezhaChatTheme";
 
+  /* =====================================================
+     哪吒聊天室｜GitHub UI 設定中心
+     -----------------------------------------------------
+     之後改文字 / 分類名稱 / 分類網址，只需要改這一小段。
+     不需要再碰 Cloudflare Worker。
+  ====================================================== */
+  window.NEZHA_UI_CONFIG = {
+    version: "20260904-all-in-one-1",
+
+    brand: {
+      title: "👺哪吒全能娛樂基地🚩",
+      subtitle: "輸入【暱稱】直接加入",
+      nicknamePlaceholder: "輸入你的暱稱",
+      installButton: "📲 加到手機桌面",
+      installHint: "加到主畫面後，下次可以直接點圖示進入群組",
+      logo: ASSET_BASE + "/logo.webp",
+      floatingBall: ASSET_BASE + "/floating-ball.webp"
+    },
+
+    loginCategories: [
+      { icon: "⚽", label: "體育" },
+      { icon: "🎰", label: "老虎機" },
+      { icon: "🎟️", label: "彩票" },
+      { icon: "🏎️", label: "跑車" }
+    ],
+
+    chatCategories: [
+      {
+        key: "sports",
+        icon: "⚽",
+        label: "體育",
+        url: "https://awu7757-sys.github.io/habao-football-ai/"
+      },
+      {
+        key: "slots",
+        icon: "🎰",
+        label: "老虎機",
+        url: "https://xinyao-ai.github.io/xinyao-ai/?v=5000"
+      },
+      {
+        key: "lottery",
+        icon: "🎟️",
+        label: "彩票",
+        url: "https://xinyao-ai.github.io/xinyao-539/"
+      },
+      {
+        key: "car",
+        icon: "🏎️",
+        label: "跑車",
+        url: ""
+      }
+    ]
+  };
+
+
   const THEMES = [
     {
       id: "milk-gold",
@@ -919,20 +974,383 @@
     }
   }
 
-  function ensureCategoryLinks() {
-    const header =
-      document.querySelector(".header");
 
-    let strip =
-      document.querySelector(
-        ".nezha-category-strip"
+  /* =====================================================
+     GitHub UI 設定
+     -----------------------------------------------------
+     文字 / 分類 / 網址由 ui-config.js 控制。
+  ====================================================== */
+
+  /* =====================================================
+     GitHub 直接接管登入頁樣式
+     -----------------------------------------------------
+     舊 Worker 的 .join::before 分類條直接隱藏，
+     改用 ui.js 自己產生的分類條。
+  ====================================================== */
+  function ensureGithubManagedLoginStyles() {
+    if (
+      document.getElementById(
+        "nezhaGithubManagedLoginStyles"
+      )
+    ) {
+      return;
+    }
+
+    const style =
+      document.createElement(
+        "style"
       );
 
-    if (!strip && header) {
+    style.id =
+      "nezhaGithubManagedLoginStyles";
+
+    style.textContent = `
+      /* 關掉 Worker 舊的分類提示 */
+      html body .join::before {
+        content: none !important;
+        display: none !important;
+      }
+
+      /* GitHub 管理的登入頁分類列 */
+      .github-login-category-strip {
+        width: min(430px, calc(100% - 24px)) !important;
+        margin: 0 auto 16px !important;
+        padding: 11px 14px !important;
+        box-sizing: border-box !important;
+
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-wrap: nowrap !important;
+        gap: 18px !important;
+
+        background:
+          linear-gradient(
+            180deg,
+            #fffdf7 0%,
+            #f5e7c9 100%
+          ) !important;
+
+        border: 2px solid #c9973f !important;
+        border-radius: 14px !important;
+
+        color: #3f2d19 !important;
+        -webkit-text-fill-color: #3f2d19 !important;
+
+        font-size: 13px !important;
+        font-weight: 900 !important;
+        line-height: 1.2 !important;
+        text-align: center !important;
+
+        box-shadow:
+          0 8px 20px rgba(75,49,23,.12),
+          inset 0 1px 0 rgba(255,255,255,.95) !important;
+      }
+
+      .github-login-category-item {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 4px !important;
+        white-space: nowrap !important;
+      }
+
+      .github-login-category-icon,
+      .github-login-category-label {
+        display: inline-block !important;
+      }
+
+      /* 確保輸入暱稱清楚可見 */
+      #nickname {
+        color: #251e18 !important;
+        -webkit-text-fill-color: #251e18 !important;
+        caret-color: #251e18 !important;
+        background: #fff !important;
+      }
+
+      #nickname::placeholder {
+        color: #8c8177 !important;
+        -webkit-text-fill-color: #8c8177 !important;
+        opacity: 1 !important;
+      }
+
+      /* 聊天室四分類一定可點 */
+      .nezha-category-strip {
+        position: relative !important;
+        z-index: 50 !important;
+        pointer-events: auto !important;
+      }
+
+      .nezha-category-strip .nezha-category-item,
+      .nezha-category-strip .nezha-category-link {
+        pointer-events: auto !important;
+        touch-action: manipulation !important;
+        text-decoration: none !important;
+      }
+
+      .nezha-category-strip a.nezha-category-item {
+        color: inherit !important;
+      }
+
+      @media (max-width: 520px) {
+        .github-login-category-strip {
+          width: calc(100% - 18px) !important;
+          padding: 10px 8px !important;
+          gap: 9px !important;
+          font-size: 11px !important;
+          border-radius: 12px !important;
+        }
+      }
+    `;
+
+    document.head.appendChild(
+      style
+    );
+  }
+
+  function getNezhaUiConfig() {
+    return (
+      window.NEZHA_UI_CONFIG ||
+      {
+        version: "fallback",
+        brand: {
+          title: "👺哪吒全能娛樂基地🚩",
+          subtitle: "輸入【暱稱】直接加入",
+          nicknamePlaceholder: "輸入你的暱稱",
+          installButton: "📲 加到手機桌面",
+          installHint: "加到主畫面後，下次可以直接點圖示進入群組",
+          logo: ASSET_BASE + "/logo.webp",
+          floatingBall: ASSET_BASE + "/floating-ball.webp"
+        },
+        loginCategories: [
+          { icon: "⚽", label: "體育" },
+          { icon: "🎰", label: "老虎機" },
+          { icon: "🎟️", label: "彩票" },
+          { icon: "🏎️", label: "跑車" }
+        ],
+        chatCategories: [
+          {
+            key: "sports",
+            icon: "⚽",
+            label: "體育",
+            url: "https://awu7757-sys.github.io/habao-football-ai/"
+          },
+          {
+            key: "slots",
+            icon: "🎰",
+            label: "老虎機",
+            url: "https://xinyao-ai.github.io/xinyao-ai/?v=5000"
+          },
+          {
+            key: "lottery",
+            icon: "🎟️",
+            label: "彩票",
+            url: "https://xinyao-ai.github.io/xinyao-539/"
+          },
+          {
+            key: "car",
+            icon: "🏎️",
+            label: "跑車",
+            url: ""
+          }
+        ]
+      }
+    );
+  }
+
+  function applyLoginUiFromGithub() {
+    const config = getNezhaUiConfig();
+    const brand = config.brand || {};
+
+    let strip =
+      document.getElementById(
+        "githubLoginCategoryStrip"
+      );
+
+    const join =
+      document.getElementById(
+        "join"
+      );
+
+    const form =
+      document.getElementById(
+        "joinForm"
+      );
+
+    /*
+      舊 Worker 還沒有 placeholder 時也能自動補，
+      避免部署順序不同造成白畫面。
+    */
+    if (
+      !strip &&
+      join &&
+      form
+    ) {
       strip =
         document.createElement(
           "div"
         );
+
+      strip.id =
+        "githubLoginCategoryStrip";
+
+      strip.className =
+        "github-login-category-strip";
+
+      strip.setAttribute(
+        "aria-label",
+        "娛樂分類"
+      );
+
+      join.insertBefore(
+        strip,
+        form
+      );
+    }
+
+    if (strip) {
+      const categories =
+        Array.isArray(
+          config.loginCategories
+        )
+          ? config.loginCategories
+          : [];
+
+      strip.innerHTML =
+        categories
+          .map(
+            function(item) {
+              return (
+                '<span class="github-login-category-item">' +
+                '<span class="github-login-category-icon">' +
+                String(item.icon || "") +
+                "</span>" +
+                '<span class="github-login-category-label">' +
+                String(item.label || "") +
+                "</span>" +
+                "</span>"
+              );
+            }
+          )
+          .join("");
+    }
+
+    const logo =
+      document.getElementById(
+        "loginBrandLogo"
+      ) ||
+      document.querySelector(
+        ".logo img"
+      );
+
+    if (
+      logo &&
+      brand.logo
+    ) {
+      logo.src =
+        brand.logo;
+    }
+
+    const title =
+      document.getElementById(
+        "loginBrandTitle"
+      ) ||
+      document.querySelector(
+        "#joinForm > h1"
+      );
+
+    if (
+      title &&
+      brand.title
+    ) {
+      title.textContent =
+        brand.title;
+    }
+
+    const subtitle =
+      document.getElementById(
+        "loginBrandSubtitle"
+      ) ||
+      document.querySelector(
+        "#joinForm > p"
+      );
+
+    if (
+      subtitle &&
+      brand.subtitle
+    ) {
+      subtitle.textContent =
+        brand.subtitle;
+    }
+
+    const installButton =
+      document.getElementById(
+        "joinInstallButton"
+      );
+
+    if (
+      installButton &&
+      brand.installButton
+    ) {
+      installButton.textContent =
+        brand.installButton;
+    }
+
+    const installHint =
+      document.getElementById(
+        "joinInstallHint"
+      );
+
+    if (
+      installHint &&
+      brand.installHint
+    ) {
+      installHint.textContent =
+        brand.installHint;
+    }
+
+    const nickname =
+      document.getElementById(
+        "nickname"
+      );
+
+    if (
+      nickname &&
+      brand.nicknamePlaceholder
+    ) {
+      nickname.placeholder =
+        brand.nicknamePlaceholder;
+    }
+  }
+
+  function ensureCategoryLinks() {
+    const config =
+      getNezhaUiConfig();
+
+    const header =
+      document.querySelector(
+        ".header"
+      );
+
+    let strip =
+      document.getElementById(
+        "chatCategoryStrip"
+      ) ||
+      document.querySelector(
+        ".nezha-category-strip"
+      );
+
+    if (
+      !strip &&
+      header
+    ) {
+      strip =
+        document.createElement(
+          "div"
+        );
+
+      strip.id =
+        "chatCategoryStrip";
 
       strip.className =
         "nezha-category-strip";
@@ -950,62 +1368,77 @@
 
     if (!strip) return;
 
+    const items =
+      Array.isArray(
+        config.chatCategories
+      )
+        ? config.chatCategories
+        : [];
+
+    const configVersion =
+      String(
+        config.version ||
+        "github-ui"
+      );
+
     if (
-      strip.dataset.linkVersion ===
-      "v3"
+      strip.dataset.configVersion ===
+      configVersion
     ) {
       return;
     }
 
-    /*
-      重點：
-      Worker 本身已經會先建立這四格，
-      所以前一版「只有不存在才建立按鈕」根本沒執行到。
-      這版直接把現有四格改成真正 <a> 連結。
-    */
-    strip.innerHTML = `
-      <a
-        class="nezha-category-item nezha-category-link"
-        href="https://awu7757-sys.github.io/habao-football-ai/"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="開啟體育分析"
-      >
-        ⚽ <span>體育</span>
-      </a>
+    strip.innerHTML =
+      items
+        .map(
+          function(item) {
+            const icon =
+              String(
+                item.icon || ""
+              );
 
-      <a
-        class="nezha-category-item nezha-category-link"
-        href="https://xinyao-ai.github.io/xinyao-ai/?v=5000"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="開啟老虎機分析"
-      >
-        🎰 <span>老虎機</span>
-      </a>
+            const label =
+              String(
+                item.label || ""
+              );
 
-      <a
-        class="nezha-category-item nezha-category-link"
-        href="https://xinyao-ai.github.io/xinyao-539/"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="開啟彩票分析"
-      >
-        🎟️ <span>彩票</span>
-      </a>
+            const url =
+              String(
+                item.url || ""
+              ).trim();
 
-      <button
-        class="nezha-category-item nezha-category-coming"
-        type="button"
-        aria-label="跑車功能尚未設定"
-        title="跑車網址尚未設定"
-      >
-        🏎️ <span>跑車</span>
-      </button>
-    `;
+            if (url) {
+              return (
+                '<a class="nezha-category-item nezha-category-link"' +
+                ' href="' +
+                url.replace(/"/g, "&quot;") +
+                '" target="_blank" rel="noopener noreferrer"' +
+                ' aria-label="開啟' +
+                label.replace(/"/g, "&quot;") +
+                '">' +
+                icon +
+                " <span>" +
+                label +
+                "</span></a>"
+              );
+            }
 
-    strip.dataset.linkVersion =
-      "v3";
+            return (
+              '<button class="nezha-category-item nezha-category-coming"' +
+              ' type="button" title="' +
+              label.replace(/"/g, "&quot;") +
+              '網址尚未設定">' +
+              icon +
+              " <span>" +
+              label +
+              "</span></button>"
+            );
+          }
+        )
+        .join("");
+
+    strip.dataset.configVersion =
+      configVersion;
 
     strip.style.setProperty(
       "pointer-events",
@@ -1017,74 +1450,110 @@
       .querySelectorAll(
         ".nezha-category-link"
       )
-      .forEach(function(link) {
-        link.style.setProperty(
-          "pointer-events",
-          "auto",
-          "important"
-        );
+      .forEach(
+        function(link) {
+          link.style.setProperty(
+            "pointer-events",
+            "auto",
+            "important"
+          );
 
-        link.style.setProperty(
-          "text-decoration",
-          "none",
-          "important"
-        );
+          link.style.setProperty(
+            "text-decoration",
+            "none",
+            "important"
+          );
 
-        /*
-          保險：若瀏覽器 / iframe 對 target=_blank 有特殊行為，
-          click 時再直接指定新分頁。
-        */
-        link.addEventListener(
-          "click",
-          function(event) {
-            const url =
-              link.getAttribute(
-                "href"
-              );
+          link.addEventListener(
+            "click",
+            function(event) {
+              const url =
+                link.getAttribute(
+                  "href"
+                );
 
-            if (!url) return;
+              if (!url) return;
 
-            event.stopPropagation();
+              event.preventDefault();
+              event.stopPropagation();
 
-            const opened =
-              window.open(
-                url,
-                "_blank",
-                "noopener,noreferrer"
-              );
+              const opened =
+                window.open(
+                  url,
+                  "_blank",
+                  "noopener,noreferrer"
+                );
 
-            /*
-              如果 popup 被擋，退回目前分頁直接開。
-            */
-            if (!opened) {
-              window.location.href =
-                url;
+              if (!opened) {
+                window.location.href =
+                  url;
+              }
+            },
+            {
+              capture: true
             }
-
-            event.preventDefault();
-          },
-          {
-            capture: true
-          }
-        );
-      });
+          );
+        }
+      );
   }
 
   function applyNezhaUi() {
-    document.title = "👺哪吒全能娛樂基地🚩";
+    const config =
+      getNezhaUiConfig();
 
-    const joinLogo = document.querySelector(".logo img");
-    if (joinLogo) joinLogo.src = ASSET_BASE + "/logo.webp";
+    const brand =
+      config.brand || {};
 
-    const headerLogo = document.querySelector(".header-brand-mark img");
-    if (headerLogo) headerLogo.src = ASSET_BASE + "/logo.webp";
+    document.title =
+      brand.title ||
+      "👺哪吒全能娛樂基地🚩";
 
-    const floating = document.querySelector(".hd-floating-login-button img");
-    if (floating) floating.src = ASSET_BASE + "/floating-ball.webp";
+    applyLoginUiFromGithub();
+
+    const joinLogo =
+      document.querySelector(
+        ".logo img"
+      );
+
+    if (
+      joinLogo &&
+      brand.logo
+    ) {
+      joinLogo.src =
+        brand.logo;
+    }
+
+    const headerLogo =
+      document.querySelector(
+        ".header-brand-mark img"
+      );
+
+    if (
+      headerLogo &&
+      brand.logo
+    ) {
+      headerLogo.src =
+        brand.logo;
+    }
+
+    const floating =
+      document.querySelector(
+        ".hd-floating-login-button img"
+      );
+
+    if (
+      floating &&
+      brand.floatingBall
+    ) {
+      floating.src =
+        brand.floatingBall;
+    }
 
     const roomTitle = document.getElementById("roomTitleText");
     if (roomTitle && (!roomTitle.textContent || /皇鼎|HD888/.test(roomTitle.textContent))) {
-      roomTitle.textContent = "👺哪吒全能娛樂基地🚩";
+      roomTitle.textContent =
+        brand.title ||
+        "👺哪吒全能娛樂基地🚩";
     }
 
     const adminHeading = [...document.querySelectorAll("h1,h2,h3,strong,div,span")]
@@ -2029,6 +2498,7 @@
 
   function init() {
     ensureThemeStyles();
+    ensureGithubManagedLoginStyles();
     installNicknamePlainStyle();
     installFloatingBallDragFix();
     installAdminToolsScrollFix();
