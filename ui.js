@@ -2533,10 +2533,61 @@
     );
   }
 
+
+  /* =====================================================
+     登入頁分類列｜只保留一條
+     -----------------------------------------------------
+     原因：
+     1. Worker 的 .join::before 一條
+     2. GitHub ui.js 又建立 #githubLoginCategoryStrip 一條
+     所以畫面出現兩條。
+
+     現在固定：
+     - 保留 GitHub 控制的 ::before 分類列
+     - 隱藏額外建立的 githubLoginCategoryStrip
+  ====================================================== */
+  function keepOnlyOneLoginCategoryBar() {
+    if (
+      document.getElementById(
+        "nezhaSingleLoginCategoryBar"
+      )
+    ) {
+      return;
+    }
+
+    const style =
+      document.createElement(
+        "style"
+      );
+
+    style.id =
+      "nezhaSingleLoginCategoryBar";
+
+    style.textContent = `
+      /* 額外那條隱藏 */
+      #githubLoginCategoryStrip,
+      .github-login-category-strip {
+        display: none !important;
+      }
+
+      /* 只保留這一條 */
+      html body .page .join::before,
+      html body .join::before {
+        content: "⚽ 體育　🎰 老虎機　🎟️ 彩票　🏎️ 跑車" !important;
+        display: block !important;
+      }
+    `;
+
+    document.head.appendChild(
+      style
+    );
+  }
+
   function init() {
     ensureThemeStyles();
     ensureGithubManagedLoginStyles();
     forceLoginCategoryTextOnly();
+    keepOnlyOneLoginCategoryBar();
     installNicknamePlainStyle();
     installFloatingBallDragFix();
     installAdminToolsScrollFix();
