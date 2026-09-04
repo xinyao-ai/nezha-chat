@@ -2496,9 +2496,47 @@
 
 
 
+
+  /* =====================================================
+     登入頁分類文字修正
+     - 拔掉「🔥 熱門分類」
+     - 只保留四個分類
+     - 用高權重覆蓋 Worker 舊樣式
+  ====================================================== */
+  function forceLoginCategoryTextOnly() {
+    if (
+      document.getElementById(
+        "nezhaLoginCategoryTextOnly"
+      )
+    ) {
+      return;
+    }
+
+    const style =
+      document.createElement(
+        "style"
+      );
+
+    style.id =
+      "nezhaLoginCategoryTextOnly";
+
+    style.textContent = `
+      html body .page .join::before,
+      html body .join::before {
+        content: "⚽ 體育　🎰 老虎機　🎟️ 彩票　🏎️ 跑車" !important;
+        display: block !important;
+      }
+    `;
+
+    document.head.appendChild(
+      style
+    );
+  }
+
   function init() {
     ensureThemeStyles();
     ensureGithubManagedLoginStyles();
+    forceLoginCategoryTextOnly();
     installNicknamePlainStyle();
     installFloatingBallDragFix();
     installAdminToolsScrollFix();
