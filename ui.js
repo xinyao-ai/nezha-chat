@@ -2583,7 +2583,83 @@
     );
   }
 
+
+  /* =====================================================
+     iPhone 加到主畫面教學圖｜GitHub 控制
+     -----------------------------------------------------
+     教學彈窗出現時，統一把教學圖片換成：
+     https://nezha-chat.pages.dev/install-guide-ios-clear.png
+     之後換圖只要覆蓋 GitHub 同名圖片即可。
+  ====================================================== */
+  function forceIosInstallGuideImageFromGithub() {
+    const GUIDE_URL =
+      "https://nezha-chat.pages.dev/install-guide-ios-clear.png";
+
+    function applyGuideImage() {
+      const images =
+        Array.from(
+          document.querySelectorAll("img")
+        );
+
+      images.forEach(function(img) {
+        const src =
+          String(
+            img.getAttribute("src") ||
+            ""
+          );
+
+        const alt =
+          String(
+            img.getAttribute("alt") ||
+            ""
+          );
+
+        const className =
+          String(
+            img.className ||
+            ""
+          );
+
+        const id =
+          String(
+            img.id ||
+            ""
+          );
+
+        const looksLikeIosGuide =
+          /install-guide-ios-clear\.png/i.test(src) ||
+          /iPhone.*主畫面|Safari.*主畫面|加入主畫面教學/i.test(alt) ||
+          /install.*guide|ios.*guide|pwa.*guide/i.test(className) ||
+          /install.*guide|ios.*guide|pwa.*guide/i.test(id);
+
+        if (
+          looksLikeIosGuide &&
+          src !== GUIDE_URL
+        ) {
+          img.src =
+            GUIDE_URL;
+        }
+      });
+    }
+
+    applyGuideImage();
+
+    const observer =
+      new MutationObserver(
+        applyGuideImage
+      );
+
+    observer.observe(
+      document.body,
+      {
+        childList: true,
+        subtree: true
+      }
+    );
+  }
+
   function init() {
+    forceIosInstallGuideImageFromGithub();
     ensureThemeStyles();
     ensureGithubManagedLoginStyles();
     forceLoginCategoryTextOnly();
