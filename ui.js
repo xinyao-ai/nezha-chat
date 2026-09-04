@@ -40318,33 +40318,21 @@ function sendMessage() {
     null;
 
   /*
-    管理員端完全取消「本機先畫一份訊息」。
-    管理員送出後只顯示 Worker 正式回傳的那一份。
-
-    這就是管理端網址會出現兩份、客戶端卻正常的真正差別：
-      - 管理端先自己 addMessage() 一次
-      - Worker 做完網址預覽後又回傳正式訊息一次
-
-    所以：
-      管理端 → 不做 optimistic message
-      客戶端 → 一般文字仍可保留 optimistic message
-  */
-  /*
-    所有端都取消本機 optimistic 訊息。
+    全端關閉本機 optimistic 訊息。
     客戶端與管理端都只顯示 Worker 正式回傳的訊息，
-    避免同一則訊息先本機畫一次、伺服器又回傳一次而變成兩份。
+    避免同一則訊息出現兩遍。
   */
-  const shouldRenderOptimistic =
-    false;
-
-  if (shouldRenderOptimistic) {
+  if (false) {
     addMessage(
-      currentChatName || "匿名",
+      currentChatName || "管理員",
       text,
       Date.now(),
       replySnapshot,
       optimisticId,
-      false,
+      !!(
+        adminSocketAuthenticated ||
+        isAdminLoggedIn()
+      ),
       false,
       {
         "😍": 0,
@@ -56208,40 +56196,18 @@ html, body {
 }
 
 .join::before {
-  content: "🔥 熱門分類｜⚽ 體育　🎰 老虎機　🎟️ 彩票　🏎️ 跑車";
+  content: "⚽  體育   ·   🎰  老虎機   ·   🎟️  彩票   ·   🏎️  跑車";
   display: block;
-  width: fit-content;
-  max-width: calc(100% - 22px);
-  margin: 0 auto 18px;
-  padding: 11px 18px;
-  box-sizing: border-box;
-  border: 2px solid #c99a45;
+  margin: 0 auto 14px;
+  padding: 9px 13px;
+  border: 1px solid rgba(240,196,90,.38);
   border-radius: 999px;
-  color: #4a341d !important;
-  background:
-    linear-gradient(
-      180deg,
-      #fffaf0 0%,
-      #f6e7c9 100%
-    ) !important;
-  font-size: 14px;
-  font-weight: 950;
-  line-height: 1.25;
-  letter-spacing: .25px;
-  text-align: center;
-  text-shadow: none !important;
-  box-shadow:
-    0 7px 18px rgba(91,64,32,.14),
-    inset 0 1px 0 rgba(255,255,255,.9);
-}
-
-@media (max-width: 520px) {
-  .join::before {
-    max-width: calc(100% - 12px);
-    padding: 10px 12px;
-    font-size: 12px;
-    line-height: 1.35;
-  }
+  color: var(--nezha-gold-soft);
+  background: rgba(255,255,255,.035);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .4px;
+  box-shadow: inset 0 0 18px rgba(240,196,90,.04);
 }
 
 .logo {
@@ -57268,55 +57234,6 @@ body.admin-drawer-open
 .nezha-category-direct-disabled {
   cursor: pointer !important;
   opacity: .82;
-}
-
-
-
-/* =====================================================
-   登入頁熱門分類｜最終覆蓋
-   放在所有舊主題 CSS 的最後面，避免再次被黑色樣式蓋掉
-===================================================== */
-html body .join::before {
-  content: "⚽ 體育　🎰 老虎機　🎟️ 彩票　🏎️ 跑車" !important;
-  display: block !important;
-  width: calc(100% - 36px) !important;
-  max-width: 430px !important;
-  margin: 0 auto 18px !important;
-  padding: 12px 18px !important;
-  box-sizing: border-box !important;
-
-  background:
-    linear-gradient(
-      180deg,
-      #fffdf7 0%,
-      #f5e7c9 100%
-    ) !important;
-
-  color: #3f2d19 !important;
-  -webkit-text-fill-color: #3f2d19 !important;
-
-  border: 2px solid #c9973f !important;
-  border-radius: 14px !important;
-
-  font-size: 14px !important;
-  font-weight: 950 !important;
-  line-height: 1.3 !important;
-  letter-spacing: .2px !important;
-  text-align: center !important;
-  text-shadow: none !important;
-
-  box-shadow:
-    0 8px 20px rgba(75,49,23,.14),
-    inset 0 1px 0 rgba(255,255,255,.95) !important;
-}
-
-@media (max-width: 520px) {
-  html body .join::before {
-    width: calc(100% - 20px) !important;
-    padding: 11px 10px !important;
-    font-size: 12px !important;
-    border-radius: 12px !important;
-  }
 }
 
 </style>
