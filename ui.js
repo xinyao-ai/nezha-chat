@@ -590,19 +590,53 @@
       button.setAttribute("aria-pressed", theme.id === current ? "true" : "false");
       if (theme.id === current) button.classList.add("selected");
 
-      if (theme.previewBg) button.style.background = theme.previewBg;
-      if (theme.previewText) button.style.color = theme.previewText;
-      if (theme.previewBorder) button.style.borderColor = theme.previewBorder;
+      if (theme.previewBg) {
+        button.style.setProperty(
+          "background",
+          theme.previewBg,
+          "important"
+        );
+      }
+
+      if (theme.previewText) {
+        button.style.setProperty(
+          "color",
+          theme.previewText,
+          "important"
+        );
+      }
+
+      if (theme.previewBorder) {
+        button.style.setProperty(
+          "border-color",
+          theme.previewBorder,
+          "important"
+        );
+      }
 
       const name = document.createElement("div");
       name.className = "nezha-theme-choice-name";
       name.textContent = `${theme.icon} ${theme.name}`;
-      if (theme.previewText) name.style.color = theme.previewText;
+
+      if (theme.previewText) {
+        name.style.setProperty(
+          "color",
+          theme.previewText,
+          "important"
+        );
+      }
 
       const desc = document.createElement("div");
       desc.className = "nezha-theme-choice-desc";
       desc.textContent = theme.desc;
-      if (theme.previewDesc) desc.style.color = theme.previewDesc;
+
+      if (theme.previewDesc) {
+        desc.style.setProperty(
+          "color",
+          theme.previewDesc,
+          "important"
+        );
+      }
 
       const swatches = document.createElement("div");
       swatches.className = "nezha-theme-swatches";
@@ -2658,9 +2692,59 @@
     );
   }
 
+
+  /* =====================================================
+     字色修正｜分類列 + 主題選擇卡
+     -----------------------------------------------------
+     上方四分類是淺色底，所以固定用深咖啡字。
+     主題選擇卡則恢復各自 preview 背景與對應文字色。
+  ====================================================== */
+  function ensureReadableThemeTextStyles() {
+    if (
+      document.getElementById(
+        "nezhaReadableThemeTextStyles"
+      )
+    ) {
+      return;
+    }
+
+    const style =
+      document.createElement(
+        "style"
+      );
+
+    style.id =
+      "nezhaReadableThemeTextStyles";
+
+    style.textContent = `
+      body[data-nezha-theme]
+      .nezha-category-strip
+      .nezha-category-item,
+      body[data-nezha-theme]
+      .nezha-category-strip
+      .nezha-category-link,
+      body[data-nezha-theme]
+      .nezha-category-strip
+      .nezha-category-coming {
+        color: #3f2d19 !important;
+        -webkit-text-fill-color: #3f2d19 !important;
+        text-shadow: none !important;
+      }
+
+      .nezha-theme-choice-name,
+      .nezha-theme-choice-desc {
+        -webkit-text-fill-color: currentColor !important;
+        text-shadow: none !important;
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
   function init() {
     forceIosInstallGuideImageFromGithub();
     ensureThemeStyles();
+    ensureReadableThemeTextStyles();
     ensureGithubManagedLoginStyles();
     forceLoginCategoryTextOnly();
     keepOnlyOneLoginCategoryBar();
