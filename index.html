@@ -59,6 +59,35 @@
       }
     }
   </style>
+
+  <!-- =====================================================
+       OneSignal Web Push
+       只加入 SDK 與初始化，不改原本聊天室 / PWA / iframe 功能
+  ====================================================== -->
+  <script
+    src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
+    defer
+  ></script>
+
+  <script>
+    window.OneSignalDeferred =
+      window.OneSignalDeferred || [];
+
+    OneSignalDeferred.push(
+      async function(OneSignal) {
+        await OneSignal.init({
+          appId:
+            "bf427f01-8b60-4b45-abdb-4a74d617102a",
+          serviceWorkerPath:
+            "OneSignalSDKWorker.js",
+          serviceWorkerParam: {
+            scope: "/"
+          }
+        });
+      }
+    );
+  </script>
+
 </head>
 <body>
   <button
