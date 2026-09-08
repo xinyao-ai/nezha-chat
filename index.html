@@ -326,6 +326,10 @@
       "hd888FirstPartyMemberGrant:" +
       room;
 
+    const pushVapidKeyStorage =
+      "nezhaPushVapidPublicKey";
+
+
     function safeGet(key) {
       try {
         return (
@@ -442,72 +446,58 @@
     }
 
 
-    function uint8ArraysEqual(
-      left,
-      right
+    function uint8ArrayToBase64Url(
+      bytes
     ) {
-      const a =
-        left instanceof Uint8Array
-          ? left
+      const input =
+        bytes instanceof Uint8Array
+          ? bytes
           : new Uint8Array(
-              left || []
+              bytes || []
             );
 
-      const b =
-        right instanceof Uint8Array
-          ? right
-          : new Uint8Array(
-              right || []
-            );
-
-      if (a.length !== b.length) {
-        return false;
-      }
+      let binary = "";
 
       for (
         let i = 0;
-        i < a.length;
+        i < input.length;
         i++
       ) {
-        if (a[i] !== b[i]) {
-          return false;
-        }
+        binary +=
+          String.fromCharCode(
+            input[i]
+          );
       }
 
-      return true;
+      return btoa(binary)
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/g, "");
     }
 
-    function subscriptionUsesVapidKey(
-      subscription,
+    function pushScopeForVapidKey(
       vapidPublicKey
     ) {
-      if (
-        !subscription ||
-        !subscription.options ||
-        !subscription.options
-          .applicationServerKey
-      ) {
-        return false;
-      }
+      const token =
+        String(
+          vapidPublicKey || ""
+        )
+          .replace(
+            /[^a-zA-Z0-9_-]/g,
+            ""
+          )
+          .slice(-18);
 
-      const expected =
-        urlBase64ToUint8Array(
-          vapidPublicKey
-        );
-
-      const actual =
-        new Uint8Array(
-          subscription.options
-            .applicationServerKey
-        );
-
-      return uint8ArraysEqual(
-        actual,
-        expected
+      return (
+        "/push-vapid-" +
+        token +
+        "/"
       );
     }
 
-    async function getPushRegistration() {
+    async function getPushRegistration(
+      vapidPublicKey
+    ) {
       if (
         !("serviceWorker" in navigator)
       ) {
@@ -516,8 +506,29 @@
         );
       }
 
+      const scope =
+        pushScopeForVapidKey(
+          vapidPublicKey
+        );
+
+      /*
+        每一組 VAPID 公鑰都用不同 scope。
+        這樣 iPhone 不可能再沿用舊 VAPID registration。
+      */
       const registration =
-        await navigator.serviceWorker.ready;
+        await navigator.serviceWorker.register(
+          "/push-v2-sw.js?k=" +
+          encodeURIComponent(
+            String(
+              vapidPublicKey || ""
+            ).slice(-18)
+          ),
+          {
+            scope
+          }
+        );
+
+      await registration.update();
 
       if (
         !registration.pushManager
@@ -540,47 +551,40 @@
         return {
           supported: false,
           permission: "unsupported",
-          subscribed: false,
-          vapidMatches: false
+          subscribed: false
         };
       }
 
       let subscribed = false;
-      let vapidMatches = false;
 
       try {
+        const currentVapidKey =
+          await getVapidPublicKey();
+
         const registration =
-          await getPushRegistration();
+          await getPushRegistration(
+            currentVapidKey
+          );
 
         const subscription =
           await registration.pushManager
             .getSubscription();
 
-        if (subscription) {
-          const vapidPublicKey =
-            await getVapidPublicKey();
+        const savedVapidKey =
+          safeGet(pushVapidKeyStorage);
 
-          vapidMatches =
-            subscriptionUsesVapidKey(
-              subscription,
-              vapidPublicKey
-            );
-
-          /*
-            舊 VAPID key 的訂閱視為「未訂閱」，
-            讓按鈕重新出現，會員可以重建新訂閱。
-          */
-          subscribed =
-            vapidMatches;
-        }
+        subscribed = !!(
+          subscription &&
+          currentVapidKey &&
+          savedVapidKey === currentVapidKey
+        );
       } catch {}
 
       return {
         supported: true,
         permission:
           Notification.permission,
-        subscribed,
-        vapidMatches
+        subscribed
       };
     }
 
@@ -630,7 +634,17 @@
                 subscription:
                   subscription
                     ? subscription.toJSON()
-                    : null
+                    : null,
+                applicationServerKey:
+                  subscription &&
+                  subscription.options &&
+                  subscription.options
+                    .applicationServerKey
+                    ? uint8ArrayToBase64Url(
+                        subscription.options
+                          .applicationServerKey
+                      )
+                    : ""
               })
           }
         );
@@ -664,9 +678,6 @@
         return;
       }
 
-      /*
-        iPhone Web Push 必須從「加入主畫面」後的 Web App 開啟。
-      */
       if (
         isIOS &&
         !isStandalone
@@ -710,54 +721,75 @@
         ) {
           pushEnableButton.textContent =
             "🔔 開啟通知";
-
           return;
         }
-
-        const registration =
-          await getPushRegistration();
 
         const vapidPublicKey =
           await getVapidPublicKey();
 
-        let subscription =
+        const registration =
+          await getPushRegistration(
+            vapidPublicKey
+          );
+
+        /*
+          關鍵修復：
+          不再沿用舊 PushSubscription。
+          只要會員重新開啟通知，就先 unsubscribe 舊訂閱，
+          再用 Cloudflare 當前 VAPID_PUBLIC_KEY 建立全新訂閱。
+        */
+        const existing =
           await registration.pushManager
             .getSubscription();
 
-        /*
-          關鍵修正：
-          舊 subscription 雖然存在，
-          但如果它是用舊 VAPID_PUBLIC_KEY 建立，
-          必須先 unsubscribe，再用現在的 key 重建。
-        */
-        if (
+        if (existing) {
+          try {
+            await existing.unsubscribe();
+          } catch {}
+        }
+
+        const subscription =
+          await registration.pushManager
+            .subscribe({
+              userVisibleOnly: true,
+              applicationServerKey:
+                urlBase64ToUint8Array(
+                  vapidPublicKey
+                )
+            });
+
+        const actualApplicationServerKey =
           subscription &&
-          !subscriptionUsesVapidKey(
-            subscription,
+          subscription.options &&
+          subscription.options
+            .applicationServerKey
+            ? uint8ArrayToBase64Url(
+                subscription.options
+                  .applicationServerKey
+              )
+            : "";
+
+        if (
+          !actualApplicationServerKey ||
+          actualApplicationServerKey !==
             vapidPublicKey
-          )
         ) {
           try {
             await subscription.unsubscribe();
           } catch {}
 
-          subscription = null;
-        }
-
-        if (!subscription) {
-          subscription =
-            await registration.pushManager
-              .subscribe({
-                userVisibleOnly: true,
-                applicationServerKey:
-                  urlBase64ToUint8Array(
-                    vapidPublicKey
-                  )
-              });
+          throw new Error(
+            "iPhone 建立的推播金鑰仍是舊的，已自動取消，請關掉 App 後重新開啟再按一次通知。"
+          );
         }
 
         await sendPushSubscriptionToChat(
           subscription
+        );
+
+        safeSet(
+          pushVapidKeyStorage,
+          vapidPublicKey
         );
 
         pushEnableButton.textContent =
@@ -792,6 +824,85 @@
       } finally {
         pushEnableButton.disabled =
           false;
+      }
+    }
+
+    async function autoRepairPushSubscription() {
+      try {
+        if (
+          Notification.permission !==
+            "granted"
+        ) {
+          return;
+        }
+
+        const visitorId =
+          safeGet(visitorKey);
+
+        const joinGrant =
+          safeGet(memberGrantKey);
+
+        if (
+          !visitorId ||
+          !joinGrant
+        ) {
+          return;
+        }
+
+        const currentVapidKey =
+          await getVapidPublicKey();
+
+        const savedVapidKey =
+          safeGet(pushVapidKeyStorage);
+
+        const registration =
+          await getPushRegistration();
+
+        const existing =
+          await registration.pushManager
+            .getSubscription();
+
+        /*
+          已授權通知的會員，若本機沒有目前 VAPID key 標記，
+          就自動重建一次，不需要再手動一直按。
+        */
+        if (
+          existing &&
+          savedVapidKey === currentVapidKey
+        ) {
+          return;
+        }
+
+        if (existing) {
+          try {
+            await existing.unsubscribe();
+          } catch {}
+        }
+
+        const subscription =
+          await registration.pushManager
+            .subscribe({
+              userVisibleOnly: true,
+              applicationServerKey:
+                urlBase64ToUint8Array(
+                  currentVapidKey
+                )
+            });
+
+        await sendPushSubscriptionToChat(
+          subscription
+        );
+
+        safeSet(
+          pushVapidKeyStorage,
+          currentVapidKey
+        );
+
+      } catch (error) {
+        console.error(
+          "HD888 push auto repair failed",
+          error
+        );
       }
     }
 
@@ -1195,6 +1306,13 @@
         );
       }
     );
-  </script>
+  
+    setTimeout(
+      function() {
+        autoRepairPushSubscription();
+      },
+      1800
+    );
+</script>
 </body>
 </html>
