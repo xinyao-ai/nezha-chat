@@ -62,12 +62,44 @@
 
   <!-- =====================================================
        OneSignal Web Push
-       只加入 SDK 與初始化，不改原本聊天室 / PWA / iframe 功能
+       使用獨立 /onesignal/ scope，避免跟原本 PWA sw.js 打架
   ====================================================== -->
   <script
     src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
     defer
   ></script>
+
+  <script>
+    window.OneSignalDeferred =
+      window.OneSignalDeferred || [];
+
+    window.__oneSignalInstance =
+      null;
+
+    OneSignalDeferred.push(
+      async function(OneSignal) {
+        await OneSignal.init({
+          appId:
+            "bf427f01-8b60-4b45-abdb-4a74d617102a",
+          serviceWorkerPath:
+            "onesignal/OneSignalSDKWorker.js",
+          serviceWorkerParam: {
+            scope:
+              "/onesignal/"
+          }
+        });
+
+        window.__oneSignalInstance =
+          OneSignal;
+
+        window.dispatchEvent(
+          new Event(
+            "onesignal-ready"
+          )
+        );
+      }
+    );
+  </script>
 
   <script>
     window.OneSignalDeferred =
@@ -570,51 +602,85 @@
       return registration;
     }
 
-    async function getPushStatus() {
-      const supported =
-        "Notification" in window &&
-        "serviceWorker" in navigator &&
-        "PushManager" in window;
+    async function waitForOneSignal() {
+      if (
+        window.__oneSignalInstance
+      ) {
+        return window.__oneSignalInstance;
+      }
 
-      if (!supported) {
+      return await new Promise(
+        function(resolve, reject) {
+          const timer =
+            setTimeout(
+              function() {
+                reject(
+                  new Error(
+                    "OneSignal SDK 尚未載入完成"
+                  )
+                );
+              },
+              10000
+            );
+
+          window.addEventListener(
+            "onesignal-ready",
+            function handler() {
+              clearTimeout(timer);
+
+              window.removeEventListener(
+                "onesignal-ready",
+                handler
+              );
+
+              resolve(
+                window.__oneSignalInstance
+              );
+            }
+          );
+        }
+      );
+    }
+
+    async function getPushStatus() {
+      try {
+        const OneSignal =
+          await waitForOneSignal();
+
+        const supported =
+          OneSignal.Notifications
+            .isPushSupported();
+
+        if (!supported) {
+          return {
+            supported: false,
+            permission:
+              "unsupported",
+            subscribed: false
+          };
+        }
+
+        return {
+          supported: true,
+          permission:
+            OneSignal.Notifications
+              .permission
+              ? "granted"
+              : Notification.permission,
+          subscribed:
+            !!OneSignal.User
+              .PushSubscription
+              .optedIn
+        };
+
+      } catch {
         return {
           supported: false,
-          permission: "unsupported",
+          permission:
+            "unsupported",
           subscribed: false
         };
       }
-
-      let subscribed = false;
-
-      try {
-        const currentVapidKey =
-          await getVapidPublicKey();
-
-        const registration =
-          await getPushRegistration(
-            currentVapidKey
-          );
-
-        const subscription =
-          await registration.pushManager
-            .getSubscription();
-
-        const savedVapidKey =
-          safeGet(pushVapidKeyStorage);
-
-        subscribed = !!(
-          subscription &&
-          currentVapidKey &&
-          savedVapidKey === currentVapidKey
-        );
-      } catch {}
-
-      return {
-        supported: true,
-        permission:
-          Notification.permission,
-        subscribed
-      };
     }
 
     async function sendPushSubscriptionToChat(
@@ -695,34 +761,12 @@
     }
 
     async function subscribeToPush() {
-      const supported =
-        "Notification" in window &&
-        "serviceWorker" in navigator &&
-        "PushManager" in window;
-
-      if (!supported) {
-        alert(
-          "這支手機目前不支援網頁推播通知"
-        );
-        return;
-      }
-
       if (
         isIOS &&
         !isStandalone
       ) {
         alert(
           "iPhone 請先把聊天室加入主畫面，再從桌面圖示開啟後設定通知。"
-        );
-        return;
-      }
-
-      if (
-        Notification.permission ===
-          "denied"
-      ) {
-        alert(
-          "通知權限目前是關閉的，請到手機的網站／App 通知設定重新允許。"
         );
         return;
       }
@@ -734,92 +778,47 @@
         "🔔 設定中…";
 
       try {
-        let permission =
-          Notification.permission;
+        const OneSignal =
+          await waitForOneSignal();
 
         if (
-          permission !== "granted"
+          !OneSignal.Notifications
+            .isPushSupported()
         ) {
-          permission =
-            await Notification
-              .requestPermission();
+          throw new Error(
+            "這支手機目前不支援 Web Push"
+          );
         }
 
         if (
-          permission !== "granted"
+          Notification.permission ===
+            "denied"
+        ) {
+          throw new Error(
+            "通知權限目前被關閉，請到手機的通知設定重新允許。"
+          );
+        }
+
+        if (
+          !OneSignal.Notifications
+            .permission
+        ) {
+          await OneSignal.Notifications
+            .requestPermission();
+        }
+
+        if (
+          !OneSignal.Notifications
+            .permission
         ) {
           pushEnableButton.textContent =
             "🔔 開啟通知";
           return;
         }
 
-        const vapidPublicKey =
-          await getVapidPublicKey();
-
-        const registration =
-          await getPushRegistration(
-            vapidPublicKey
-          );
-
-        /*
-          關鍵修復：
-          不再沿用舊 PushSubscription。
-          只要會員重新開啟通知，就先 unsubscribe 舊訂閱，
-          再用 Cloudflare 當前 VAPID_PUBLIC_KEY 建立全新訂閱。
-        */
-        const existing =
-          await registration.pushManager
-            .getSubscription();
-
-        if (existing) {
-          try {
-            await existing.unsubscribe();
-          } catch {}
-        }
-
-        const subscription =
-          await registration.pushManager
-            .subscribe({
-              userVisibleOnly: true,
-              applicationServerKey:
-                urlBase64ToUint8Array(
-                  vapidPublicKey
-                )
-            });
-
-        const actualApplicationServerKey =
-          subscription &&
-          subscription.options &&
-          subscription.options
-            .applicationServerKey
-            ? uint8ArrayToBase64Url(
-                subscription.options
-                  .applicationServerKey
-              )
-            : "";
-
-        if (
-          !actualApplicationServerKey ||
-          actualApplicationServerKey !==
-            vapidPublicKey
-        ) {
-          try {
-            await subscription.unsubscribe();
-          } catch {}
-
-          throw new Error(
-            "iPhone 建立的推播金鑰仍是舊的，已自動取消，請關掉 App 後重新開啟再按一次通知。"
-          );
-        }
-
-        await sendPushSubscriptionToChat(
-          subscription
-        );
-
-        safeSet(
-          pushVapidKeyStorage,
-          vapidPublicKey
-        );
+        await OneSignal.User
+          .PushSubscription
+          .optIn();
 
         pushEnableButton.textContent =
           "✅ 通知已開啟";
@@ -834,12 +833,13 @@
 
       } catch (error) {
         console.error(
-          "HD888 push subscribe failed",
+          "OneSignal subscribe failed",
           error
         );
 
         alert(
-          "通知設定失敗：\n" +
+          "通知設定失敗：
+" +
           (
             error?.message ||
             String(error) ||
@@ -858,78 +858,23 @@
 
     async function autoRepairPushSubscription() {
       try {
-        if (
-          Notification.permission !==
-            "granted"
-        ) {
-          return;
-        }
-
-        const visitorId =
-          safeGet(visitorKey);
-
-        const joinGrant =
-          safeGet(memberGrantKey);
+        const OneSignal =
+          await waitForOneSignal();
 
         if (
-          !visitorId ||
-          !joinGrant
+          OneSignal.Notifications
+            .permission &&
+          !OneSignal.User
+            .PushSubscription
+            .optedIn
         ) {
-          return;
+          await OneSignal.User
+            .PushSubscription
+            .optIn();
         }
-
-        const currentVapidKey =
-          await getVapidPublicKey();
-
-        const savedVapidKey =
-          safeGet(pushVapidKeyStorage);
-
-        const registration =
-          await getPushRegistration();
-
-        const existing =
-          await registration.pushManager
-            .getSubscription();
-
-        /*
-          已授權通知的會員，若本機沒有目前 VAPID key 標記，
-          就自動重建一次，不需要再手動一直按。
-        */
-        if (
-          existing &&
-          savedVapidKey === currentVapidKey
-        ) {
-          return;
-        }
-
-        if (existing) {
-          try {
-            await existing.unsubscribe();
-          } catch {}
-        }
-
-        const subscription =
-          await registration.pushManager
-            .subscribe({
-              userVisibleOnly: true,
-              applicationServerKey:
-                urlBase64ToUint8Array(
-                  currentVapidKey
-                )
-            });
-
-        await sendPushSubscriptionToChat(
-          subscription
-        );
-
-        safeSet(
-          pushVapidKeyStorage,
-          currentVapidKey
-        );
-
       } catch (error) {
         console.error(
-          "HD888 push auto repair failed",
+          "OneSignal auto repair failed",
           error
         );
       }
@@ -983,6 +928,21 @@
     pushEnableButton.addEventListener(
       "click",
       subscribeToPush
+    );
+
+    OneSignalDeferred.push(
+      async function(OneSignal) {
+        try {
+          OneSignal.User
+            .PushSubscription
+            .addEventListener(
+              "change",
+              function() {
+                refreshPushButton();
+              }
+            );
+        } catch {}
+      }
     );
 
     window.addEventListener(
