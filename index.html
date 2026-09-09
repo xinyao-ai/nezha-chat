@@ -1314,5 +1314,35 @@
       1800
     );
 </script>
+
+  <!-- OneSignal：只做註冊，不改動原本聊天室程式 -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async function(OneSignal) {
+      try {
+        await OneSignal.init({
+          appId: "bf427f01-8b60-4b45-abdb-4a74d617102a",
+          serviceWorkerPath: "onesignal/OneSignalSDKWorker.js",
+          serviceWorkerParam: { scope: "/onesignal/" }
+        });
+
+        if (
+          OneSignal.Notifications.permission &&
+          !OneSignal.User.PushSubscription.optedIn
+        ) {
+          await OneSignal.User.PushSubscription.optIn();
+        }
+
+        console.log(
+          "[OneSignal] ready:",
+          OneSignal.User.PushSubscription.optedIn
+        );
+      } catch (err) {
+        console.error("[OneSignal] init failed:", err);
+      }
+    });
+  </script>
+
 </body>
 </html>
