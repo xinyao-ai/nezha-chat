@@ -1315,7 +1315,7 @@
     );
 </script>
 
-  <!-- OneSignal：安全接管既有「開啟通知」按鈕，不改其他聊天室 UI -->
+  <!-- OneSignal：修正版，只接管原本通知按鈕，不複製/替換按鈕 -->
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <script>
     window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -1328,6 +1328,101 @@
           serviceWorkerParam: { scope: "/onesignal/" }
         });
 
+        const btn = document.getElementById("pushEnableButton");
+
+        async function refreshOneSignalButton() {
+          if (!btn) return;
+
+          const hasMemberSession =
+            !!safeGet(memberGrantKey);
+
+          if (
+            !hasMemberSession ||
+            isInAppBrowser ||
+            (isIOS && !isStandalone)
+          ) {
+            btn.classList.remove("show");
+            return;
+          }
+
+          if (!OneSignal.Notifications.isPushSupported()) {
+            btn.classList.remove("show");
+            return;
+          }
+
+          if (OneSignal.User.PushSubscription.optedIn) {
+            btn.textContent = "✅ 通知已開啟";
+            btn.classList.add("show");
+            return;
+          }
+
+          btn.textContent = "🔔 開啟通知";
+          btn.classList.add("show");
+        }
+
+        /* 覆蓋原本的顯示判斷，避免舊 VAPID 狀態把按鈕藏掉 */
+        refreshPushButton = refreshOneSignalButton;
+
+        if (btn) {
+          /*
+            用 capture 攔截原本舊的 click listener，
+            不替換 DOM，所以按鈕不會消失。
+          */
+          btn.addEventListener(
+            "click",
+            async function(event) {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+
+              btn.disabled = true;
+              btn.textContent = "🔔 設定中…";
+
+              try {
+                if (!OneSignal.Notifications.isPushSupported()) {
+                  throw new Error("此裝置目前不支援 Web Push");
+                }
+
+                if (!OneSignal.Notifications.permission) {
+                  await OneSignal.Notifications.requestPermission();
+                }
+
+                if (!OneSignal.Notifications.permission) {
+                  throw new Error("尚未允許通知權限");
+                }
+
+                await OneSignal.User.PushSubscription.optIn();
+
+                if (!OneSignal.User.PushSubscription.optedIn) {
+                  throw new Error("OneSignal 尚未完成訂閱");
+                }
+
+                btn.textContent = "✅ 通知已開啟";
+                btn.classList.add("show");
+
+                console.log("[OneSignal] subscribed");
+              } catch (err) {
+                console.error("[OneSignal] subscribe failed", err);
+                alert(
+                  "通知設定失敗：" +
+                  (err?.message || String(err))
+                );
+                btn.textContent = "🔔 開啟通知";
+                btn.classList.add("show");
+              } finally {
+                btn.disabled = false;
+              }
+            },
+            true
+          );
+        }
+
+        OneSignal.User.PushSubscription.addEventListener(
+          "change",
+          refreshOneSignalButton
+        );
+
+        await refreshOneSignalButton();
+
         console.log(
           "[OneSignal] initialized",
           "permission=",
@@ -1335,62 +1430,14 @@
           "optedIn=",
           OneSignal.User.PushSubscription.optedIn
         );
-
-        const btn = document.getElementById("pushEnableButton");
-
-        if (btn) {
-          const cloned = btn.cloneNode(true);
-          btn.parentNode.replaceChild(cloned, btn);
-
-          cloned.addEventListener("click", async function() {
-            cloned.disabled = true;
-            const oldText = cloned.textContent;
-            cloned.textContent = "🔔 設定中…";
-
-            try {
-              if (!OneSignal.Notifications.isPushSupported()) {
-                throw new Error("此裝置目前不支援 Web Push");
-              }
-
-              if (!OneSignal.Notifications.permission) {
-                await OneSignal.Notifications.requestPermission();
-              }
-
-              if (!OneSignal.Notifications.permission) {
-                throw new Error("尚未允許通知權限");
-              }
-
-              await OneSignal.User.PushSubscription.optIn();
-
-              if (OneSignal.User.PushSubscription.optedIn) {
-                cloned.textContent = "✅ 通知已開啟";
-                console.log("[OneSignal] subscribed");
-              } else {
-                throw new Error("OneSignal 尚未完成訂閱");
-              }
-            } catch (err) {
-              console.error("[OneSignal] subscribe failed", err);
-              alert("通知設定失敗：" + (err?.message || String(err)));
-              cloned.textContent = oldText || "🔔 開啟通知";
-            } finally {
-              cloned.disabled = false;
-            }
-          });
-
-          if (OneSignal.User.PushSubscription.optedIn) {
-            cloned.textContent = "✅ 通知已開啟";
-          }
-        }
-
-        OneSignal.User.PushSubscription.addEventListener(
-          "change",
-          function(event) {
-            console.log("[OneSignal] subscription changed", event);
-          }
-        );
-
       } catch (err) {
         console.error("[OneSignal] init failed", err);
+
+        const btn = document.getElementById("pushEnableButton");
+        if (btn) {
+          btn.textContent = "🔔 開啟通知";
+          btn.classList.add("show");
+        }
       }
     });
   </script>
