@@ -1282,6 +1282,11 @@
         room
       );
 
+      workerParams.set(
+        "_fresh",
+        String(Date.now())
+      );
+
       return (
         workerUrl +
         "/?" +
@@ -1296,6 +1301,108 @@
 
     frame.src =
       buildWorkerFrameUrl();
+
+    /*
+      手機 Safari / PWA 連線修復：
+      iOS / Android 從背景切回前景時，
+      WebView 可能保留已失效的 iframe / WebSocket。
+      直接重載跨網域 iframe，讓聊天室用原本登入資料建立全新連線。
+
+      只處理手機恢復前景，不改登入、通知、聊天室功能。
+    */
+    let mobileFrameHiddenAt =
+      0;
+
+    let mobileFrameReloading =
+      false;
+
+    function reloadChatFrameForMobile(
+      reason
+    ) {
+      if (
+        !(isIOS || isAndroid) ||
+        mobileFrameReloading
+      ) {
+        return;
+      }
+
+      mobileFrameReloading =
+        true;
+
+      try {
+        frame.src =
+          buildWorkerFrameUrl();
+      } finally {
+        setTimeout(
+          function() {
+            mobileFrameReloading =
+              false;
+          },
+          1800
+        );
+      }
+    }
+
+    document.addEventListener(
+      "visibilitychange",
+      function() {
+        if (
+          !(isIOS || isAndroid)
+        ) {
+          return;
+        }
+
+        if (document.hidden) {
+          mobileFrameHiddenAt =
+            Date.now();
+          return;
+        }
+
+        const hiddenFor =
+          mobileFrameHiddenAt
+            ? Date.now() -
+              mobileFrameHiddenAt
+            : 0;
+
+        mobileFrameHiddenAt =
+          0;
+
+        /*
+          背景超過 2 秒就重建 iframe。
+          避免 iPhone 一回來永遠卡「連線中斷」。
+        */
+        if (hiddenFor >= 2000) {
+          reloadChatFrameForMobile(
+            "visibility"
+          );
+        }
+      }
+    );
+
+    window.addEventListener(
+      "pageshow",
+      function(event) {
+        if (
+          (isIOS || isAndroid) &&
+          event.persisted
+        ) {
+          reloadChatFrameForMobile(
+            "pageshow"
+          );
+        }
+      }
+    );
+
+    window.addEventListener(
+      "online",
+      function() {
+        if (isIOS || isAndroid) {
+          reloadChatFrameForMobile(
+            "online"
+          );
+        }
+      }
+    );
 
     window.addEventListener(
       "load",
